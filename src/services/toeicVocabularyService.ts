@@ -39,10 +39,10 @@ export class ToeicVocabularyService {
 {
   "vocabularyList": [
     {
-      "word": "example word",
-      "meaning": "nghĩa tiếng Việt",
-      "ipa": "/pronunciation/",
-      "example": "Example sentence using the word in business context"
+      "word": "example word (English)",
+      "meaning": "Meaning (Vietnamese)",
+      "ipa": "/pronunciation/ (word ipa)",
+      "example": "Example sentence using the word in business context (English"
     }
   ]
 }
@@ -57,7 +57,8 @@ Requirements:
 7. Each word must be unique
 8. Each word must be a single word or common compound word
 9. Do not include any markdown or text outside the JSON
-10. Do not include any explanations or notes`;
+10. Do not include any explanations or notes`
+;
   }
 
   private extractJsonFromText(text: string): string | null {
