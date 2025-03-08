@@ -76,7 +76,7 @@ Mọi đóng góp đều được chào đón! Vui lòng:
 5. Tạo Pull Request
 
 ## 📝 License
-Dự án được phân phối dưới giấy phép MIT. Xem `LICENSE` để biết thêm thông tin.
+
 
 ## 👤 Tác giả
 - GitHub: [@julylun](https://github.com/julylun)
