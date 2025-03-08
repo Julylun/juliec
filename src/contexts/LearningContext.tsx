@@ -9,6 +9,7 @@ interface LearningState {
 
 interface LearningContextType {
   learningState: LearningState;
+  selectedTopic: Topic | null;
   setSelectedTopic: (topic: Topic | null) => void;
   setCurrentQuestion: (questionNumber: number) => void;
   setScore: (score: number) => void;
@@ -84,17 +85,20 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [learningState]);
 
+  const value = {
+    learningState,
+    selectedTopic: learningState.selectedTopic,
+    setSelectedTopic,
+    setCurrentQuestion,
+    setScore,
+    resetLearningState
+  };
+
   return (
-    <LearningContext.Provider
-      value={{
-        learningState,
-        setSelectedTopic,
-        setCurrentQuestion,
-        setScore,
-        resetLearningState
-      }}
-    >
+    <LearningContext.Provider value={value}>
       {children}
     </LearningContext.Provider>
   );
-}; 
+};
+
+export default LearningContext; 

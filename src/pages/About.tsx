@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Arrow from '../components/icons/Arrow';
 
-const APP_VERSION = '0.1';
+const APP_VERSION = '0.2';
 
 const About: React.FC = () => {
   const navigate = useNavigate();

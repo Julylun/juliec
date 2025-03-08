@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Settings, DEFAULT_SETTINGS, ThemeType } from '../types/settings';
+import { Settings, DEFAULT_SETTINGS, ThemeType, CustomColors } from '../types/settings';
 
 interface SettingsContextType {
   settings: Settings;
@@ -8,7 +8,15 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-const THEME_COLORS = {
+interface ThemeColors {
+  bgPrimary: string;
+  textPrimary: string;
+  bgSecondary: string;
+  borderColor: string;
+  textSecondary: string;
+}
+
+const THEME_COLORS: Record<Exclude<ThemeType, 'custom'>, ThemeColors> = {
   light: {
     bgPrimary: '#ffffff',
     textPrimary: '#000000',
@@ -74,16 +82,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Apply theme changes
   useEffect(() => {
-    const themeColors = THEME_COLORS[settings.theme];
-    
-    // Update CSS variables for theme
-    document.documentElement.style.setProperty('--bg-primary', themeColors.bgPrimary);
-    document.documentElement.style.setProperty('--text-primary', themeColors.textPrimary);
-    document.documentElement.style.setProperty('--bg-secondary', themeColors.bgSecondary);
-    document.documentElement.style.setProperty('--border-color', themeColors.borderColor);
-    document.documentElement.style.setProperty('--text-secondary', themeColors.textSecondary);
-    
-  }, [settings.theme]);
+    if (settings.theme === 'custom' && settings.customColors) {
+      // Áp dụng màu sắc tùy chỉnh
+      document.documentElement.style.setProperty('--bg-primary', settings.customColors.background);
+      document.documentElement.style.setProperty('--text-primary', settings.customColors.text);
+      document.documentElement.style.setProperty('--bg-secondary', settings.customColors.secondary);
+      document.documentElement.style.setProperty('--border-color', settings.customColors.secondary);
+      document.documentElement.style.setProperty('--text-secondary', settings.customColors.secondary);
+      document.documentElement.style.setProperty('--primary-color', settings.customColors.primary);
+      document.documentElement.style.setProperty('--accent-color', settings.customColors.accent);
+    } else if (settings.theme !== 'custom') {
+      // Áp dụng theme có sẵn
+      const themeColors = THEME_COLORS[settings.theme];
+      document.documentElement.style.setProperty('--bg-primary', themeColors.bgPrimary);
+      document.documentElement.style.setProperty('--text-primary', themeColors.textPrimary);
+      document.documentElement.style.setProperty('--bg-secondary', themeColors.bgSecondary);
+      document.documentElement.style.setProperty('--border-color', themeColors.borderColor);
+      document.documentElement.style.setProperty('--text-secondary', themeColors.textSecondary);
+    }
+  }, [settings.theme, settings.customColors]);
 
   const updateSettings = (newSettings: Partial<Settings>) => {
     const updatedSettings = { ...settings, ...newSettings };

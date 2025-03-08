@@ -35,24 +35,29 @@ export class ToeicVocabularyService {
   }
 
   private generateTopicPrompt(topic: string): string {
-    return `Generate 10 essential TOEIC vocabulary words for the topic "${topic}" in the following JSON format:
+    return `Generate 10 essential TOEIC vocabulary words for the topic "${topic}" in Vietnamese. Response must be in this exact JSON format:
 {
   "vocabularyList": [
     {
-      "word": "example",
-      "meaning": "Vietnamese meaning",
-      "ipa": "IPA pronunciation",
-      "example": "Example sentence using the word"
+      "word": "example word",
+      "meaning": "nghĩa tiếng Việt",
+      "ipa": "/pronunciation/",
+      "example": "Example sentence using the word in business context"
     }
   ]
 }
-Please ensure:
-1. Words are commonly used in TOEIC tests
-2. Examples are business/professional context
-3. Vietnamese meanings are clear and accurate
-4. IPA is correct
-5. All words are relevant to the topic
-6. Response must be valid JSON format, starting with { and ending with }`;
+
+Requirements:
+1. Words must be commonly used in TOEIC tests and business settings
+2. Examples must be in business/professional context
+3. Vietnamese meanings must be clear and accurate
+4. IPA must be correct
+5. All words must be relevant to the topic "${topic}"
+6. Response must be valid JSON format
+7. Each word must be unique
+8. Each word must be a single word or common compound word
+9. Do not include any markdown or text outside the JSON
+10. Do not include any explanations or notes`;
   }
 
   private extractJsonFromText(text: string): string | null {
@@ -82,14 +87,24 @@ Please ensure:
     }
   }
 
+  private validateVocabularyItem(item: any): boolean {
+    return (
+      typeof item.word === 'string' &&
+      typeof item.meaning === 'string' &&
+      typeof item.ipa === 'string' &&
+      typeof item.example === 'string' &&
+      item.word.trim() !== '' &&
+      item.meaning.trim() !== '' &&
+      item.ipa.trim() !== '' &&
+      item.example.trim() !== ''
+    );
+  }
+
   public async generateVocabularyForTopic(topic: string): Promise<TopicVocabularyResponse> {
     try {
       console.log(`Bắt đầu tạo từ vựng cho chủ đề: ${topic}`);
       const prompt = this.generateTopicPrompt(topic);
-      console.log("=== Prompt ===");
-      console.log(prompt);
-      console.log("=============");
-
+      
       const response = await this.geminiService.generateContent(prompt);
       
       if (!response) {
@@ -104,18 +119,36 @@ Please ensure:
 
       // Parse and validate response
       const parsedResponse = JSON.parse(jsonStr);
-      console.log("=== Parsed Response ===");
-      console.log(parsedResponse);
-      console.log("=====================");
-
+      
       if (!parsedResponse.vocabularyList || !Array.isArray(parsedResponse.vocabularyList)) {
         console.log("Response thiếu trường vocabularyList hoặc không phải array");
         throw new Error('Định dạng phản hồi không hợp lệ');
       }
 
+      // Validate each vocabulary item
+      const validVocabulary = parsedResponse.vocabularyList.filter(
+        (item: any) => this.validateVocabularyItem(item)
+      );
+
+      if (validVocabulary.length === 0) {
+        throw new Error('Không có từ vựng hợp lệ được tạo');
+      }
+
+      // Remove duplicates based on word (case insensitive)
+      const uniqueVocabulary = validVocabulary.filter(
+        (item: any, index: number, self: any[]) =>
+          index === self.findIndex((t: any) => 
+            t.word.toLowerCase() === item.word.toLowerCase()
+          )
+      );
+
       // Add topic to each vocabulary item
-      const vocabularyWithTopic = parsedResponse.vocabularyList.map((vocab: any) => ({
+      const vocabularyWithTopic = uniqueVocabulary.map((vocab: any) => ({
         ...vocab,
+        word: vocab.word.trim(),
+        meaning: vocab.meaning.trim(),
+        ipa: vocab.ipa.trim(),
+        example: vocab.example.trim(),
         topic
       }));
 

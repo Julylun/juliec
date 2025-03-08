@@ -10,6 +10,9 @@ const Reading: React.FC = () => {
   const { setSelectedTopic } = useLearning();
   const [searchQuery, setSearchQuery] = useState('');
   const [localSelectedTopic, setLocalSelectedTopic] = useState<Topic | null>(null);
+  const [showCustomTopicModal, setShowCustomTopicModal] = useState(false);
+  const [customTopicTitle, setCustomTopicTitle] = useState('');
+  const [customTopicDifficulty, setCustomTopicDifficulty] = useState<Topic['difficulty']>('medium');
 
   console.log("Reading page rendering");
 
@@ -30,6 +33,23 @@ const Reading: React.FC = () => {
       console.log("Navigating to learning page with topicId:", localSelectedTopic.id);
       navigate(`/learn/reading/${localSelectedTopic.id}`);
     }
+  };
+
+  const handleCreateCustomTopic = () => {
+    if (!customTopicTitle.trim()) return;
+
+    const customTopic: Topic = {
+      id: `custom-${Date.now()}`,
+      title: customTopicTitle,
+      description: 'Custom topic created by user',
+      difficulty: customTopicDifficulty,
+      questionsCount: 4
+    };
+
+    setLocalSelectedTopic(customTopic);
+    setSelectedTopic(customTopic);
+    setShowCustomTopicModal(false);
+    navigate(`/learn/reading/${customTopic.id}`);
   };
 
   const getDifficultyColor = (difficulty: Topic['difficulty']) => {
@@ -66,6 +86,20 @@ const Reading: React.FC = () => {
 
         {/* Topics grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {/* Custom Topic Button */}
+          <button
+            onClick={() => setShowCustomTopicModal(true)}
+            className="p-4 rounded-lg border border-dashed border-[var(--border-color)] bg-[var(--bg-secondary)] hover:border-[var(--text-secondary)] transition-all cursor-pointer"
+          >
+            <div className="flex flex-col items-center justify-center h-full text-[var(--text-primary)]">
+              <span className="text-3xl mb-2">✨</span>
+              <h3 className="text-xl font-semibold">Tạo chủ đề mới</h3>
+              <p className="text-[var(--text-secondary)] text-center mt-2">
+                Tự tạo chủ đề bài đọc theo ý muốn
+              </p>
+            </div>
+          </button>
+
           {filteredTopics.map((topic) => (
             <div
               key={topic.id}
@@ -95,6 +129,67 @@ const Reading: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Custom Topic Modal */}
+        {showCustomTopicModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-[var(--bg-primary)] rounded-lg p-6 max-w-md w-full">
+              <h2 className="text-xl font-semibold mb-4 text-[var(--text-primary)]">
+                Tạo chủ đề mới
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[var(--text-secondary)] mb-2">
+                    Tên chủ đề:
+                  </label>
+                  <input
+                    type="text"
+                    value={customTopicTitle}
+                    onChange={(e) => setCustomTopicTitle(e.target.value)}
+                    placeholder="Nhập tên chủ đề..."
+                    className="w-full p-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[var(--text-secondary)] mb-2">
+                    Độ khó:
+                  </label>
+                  <select
+                    value={customTopicDifficulty}
+                    onChange={(e) => setCustomTopicDifficulty(e.target.value as Topic['difficulty'])}
+                    className="w-full p-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
+                  >
+                    <option value="easy">Dễ</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="hard">Khó</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    onClick={() => setShowCustomTopicModal(false)}
+                    className="px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleCreateCustomTopic}
+                    disabled={!customTopicTitle.trim()}
+                    className={`px-4 py-2 rounded-lg ${
+                      customTopicTitle.trim()
+                        ? 'bg-blue-500 text-white hover:bg-blue-600'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Tạo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="flex gap-4">

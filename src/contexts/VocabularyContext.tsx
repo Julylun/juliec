@@ -34,10 +34,25 @@ export const useVocabulary = () => {
 };
 
 export const VocabularyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [savedVocabulary, setSavedVocabulary] = useState<EnhancedVocabularyInfo[]>([]);
-  const [collections, setCollections] = useState<string[]>(['Favorites']);
+  // Khởi tạo collections từ localStorage hoặc dùng giá trị mặc định
+  const initialCollections = (() => {
+    const savedCollections = localStorage.getItem('vocabularyCollections');
+    if (savedCollections) {
+      try {
+        const parsedCollections = JSON.parse(savedCollections);
+        console.log('Loaded initial collections from localStorage:', parsedCollections);
+        return parsedCollections;
+      } catch (e) {
+        console.error('Error parsing saved collections:', e);
+      }
+    }
+    return ['Favorites'];
+  })();
 
-  // Load saved vocabulary and collections from localStorage on initial render
+  const [savedVocabulary, setSavedVocabulary] = useState<EnhancedVocabularyInfo[]>([]);
+  const [collections, setCollections] = useState<string[]>(initialCollections);
+
+  // Load saved vocabulary from localStorage on initial render
   useEffect(() => {
     const savedData = localStorage.getItem('savedVocabulary');
     if (savedData) {
@@ -62,20 +77,11 @@ export const VocabularyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         console.error('Error parsing saved vocabulary:', e);
       }
     }
-
-    const savedCollections = localStorage.getItem('vocabularyCollections');
-    if (savedCollections) {
-      try {
-        const parsedCollections = JSON.parse(savedCollections);
-        setCollections(parsedCollections);
-      } catch (e) {
-        console.error('Error parsing saved collections:', e);
-      }
-    }
   }, []);
 
   // Save collections to localStorage whenever they change
   useEffect(() => {
+    console.log('Collections changed, saving to localStorage:', collections);
     localStorage.setItem('vocabularyCollections', JSON.stringify(collections));
   }, [collections]);
 
@@ -158,19 +164,23 @@ export const VocabularyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Add a word to a collection
   const addToCollection = (word: string, collection: string) => {
+    console.log(`Adding word "${word}" to collection "${collection}"`);
     setSavedVocabulary(prev => {
       const newVocabulary = prev.map(item => {
         if (item.word.toLowerCase() === word.toLowerCase()) {
           // Only add if not already in the collection
           if (!item.collections.includes(collection)) {
+            console.log(`Word "${word}" not in collection, adding it`);
             return {
               ...item,
               collections: [...item.collections, collection]
             };
           }
+          console.log(`Word "${word}" already in collection "${collection}"`);
         }
         return item;
       });
+      console.log('Saving updated vocabulary with new collection assignments');
       localStorage.setItem('savedVocabulary', JSON.stringify(newVocabulary));
       return newVocabulary;
     });
@@ -195,11 +205,16 @@ export const VocabularyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Create a new collection
   const createCollection = (name: string) => {
+    console.log('Creating collection:', name);
     setCollections(prev => {
       if (prev.includes(name)) {
-        return prev; // Don't add if already exists
+        console.log('Collection already exists:', name);
+        return prev;
       }
-      return [...prev, name];
+      const newCollections = [...prev, name];
+      console.log('Saving new collections to localStorage:', newCollections);
+      localStorage.setItem('vocabularyCollections', JSON.stringify(newCollections));
+      return newCollections;
     });
   };
 
@@ -208,7 +223,13 @@ export const VocabularyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Don't allow removing the Favorites collection
     if (name === 'Favorites') return;
     
-    setCollections(prev => prev.filter(c => c !== name));
+    console.log('Removing collection:', name);
+    setCollections(prev => {
+      const newCollections = prev.filter(c => c !== name);
+      console.log('Saving updated collections to localStorage:', newCollections);
+      localStorage.setItem('vocabularyCollections', JSON.stringify(newCollections));
+      return newCollections;
+    });
     
     // Remove this collection from all vocabulary items
     setSavedVocabulary(prev => {

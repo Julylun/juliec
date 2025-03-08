@@ -122,27 +122,73 @@ const Library: React.FC = () => {
     });
   };
 
-  // Handle adding a new collection
-  const handleAddCollection = () => {
-    if (newCollectionName.trim()) {
-      createCollection(newCollectionName.trim());
-      setNewCollectionName('');
-      setShowAddCollection(false);
+  // Handle auto-generate vocabulary for a topic
+  const handleGenerateVocabulary = async (topicId: string, topicName: string) => {
+    if (!settings.geminiKey) {
+      setGenerationError("Vui lòng kiểm tra API key trong phần Cài đặt");
+      return;
     }
-  };
 
-  // Toggle word in collection
-  const toggleInCollection = (word: string, collection: string) => {
-    const vocabItem = savedVocabulary.find(
-      item => item.word.toLowerCase() === word.toLowerCase()
-    );
-    
-    if (vocabItem) {
-      if (vocabItem.collections.includes(collection)) {
-        removeFromCollection(word, collection);
-      } else {
-        addToCollection(word, collection);
+    setGeneratingTopic(topicId);
+    setGenerationError(null);
+
+    try {
+      console.log('Starting vocabulary generation for topic:', topicName);
+      const service = new ToeicVocabularyService(settings.geminiKey, settings.geminiModel);
+      const response = await service.generateVocabularyForTopic(topicName);
+
+      if (!response.success || !response.vocabularyList) {
+        throw new Error(response.error || 'Không thể tạo từ vựng');
       }
+
+      console.log('Generated vocabulary:', response.vocabularyList);
+
+      // Create collection first and wait for it to be created
+      if (!collections.includes(topicName)) {
+        console.log('Creating new collection:', topicName);
+        await new Promise<void>((resolve) => {
+          createCollection(topicName);
+          // Wait for the next render cycle to ensure collection is created
+          setTimeout(resolve, 0);
+        });
+        console.log('Current collections after creation:', collections);
+      }
+
+      // Add vocabulary first
+      const addedWords: string[] = [];
+      console.log('Adding vocabulary to savedVocabulary');
+      for (const vocab of response.vocabularyList) {
+        const vocabInfo: VocabularyInfo = {
+          word: vocab.word,
+          meaning: vocab.meaning,
+          ipa: vocab.ipa,
+          example: vocab.example
+        };
+        
+        // Skip if word already exists
+        if (!savedVocabulary.some(v => v.word.toLowerCase() === vocab.word.toLowerCase())) {
+          console.log('Adding new word:', vocab.word);
+          addVocabulary(vocabInfo);
+          addedWords.push(vocab.word);
+        }
+      }
+
+      // Wait for vocabulary to be added
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      // Now add words to collection
+      console.log('Adding words to collection:', addedWords);
+      for (const word of addedWords) {
+        addToCollection(word, topicName);
+      }
+
+      console.log('Vocabulary generation completed');
+      setGeneratingTopic(null);
+      setShowAutoGenerate(false);
+    } catch (error) {
+      console.error('Error generating vocabulary:', error);
+      setGenerationError(error instanceof Error ? error.message : 'Lỗi không xác định');
+      setGeneratingTopic(null);
     }
   };
 
@@ -194,53 +240,6 @@ const Library: React.FC = () => {
       setNewVocabularyWord('');
       setTranslatedVocabulary(null);
       setShowAddVocabulary(false);
-    }
-  };
-
-  // Handle auto-generate vocabulary for a topic
-  const handleGenerateVocabulary = async (topicId: string, topicName: string) => {
-    if (!settings.geminiKey) {
-      setGenerationError("Vui lòng kiểm tra API key trong phần Cài đặt");
-      return;
-    }
-
-    setGeneratingTopic(topicId);
-    setGenerationError(null);
-
-    try {
-      const service = new ToeicVocabularyService(settings.geminiKey, settings.geminiModel);
-      const response = await service.generateVocabularyForTopic(topicName);
-
-      if (!response.success || !response.vocabularyList) {
-        throw new Error(response.error || 'Không thể tạo từ vựng');
-      }
-
-      // Create collection if not exists
-      if (!collections.includes(topicName)) {
-        createCollection(topicName);
-      }
-
-      // Add vocabulary and add to collection
-      for (const vocab of response.vocabularyList) {
-        const vocabInfo: VocabularyInfo = {
-          word: vocab.word,
-          meaning: vocab.meaning,
-          ipa: vocab.ipa,
-          example: vocab.example
-        };
-        
-        // Skip if word already exists
-        if (!savedVocabulary.some(v => v.word.toLowerCase() === vocab.word.toLowerCase())) {
-          addVocabulary(vocabInfo);
-          addToCollection(vocab.word, topicName);
-        }
-      }
-
-      setGeneratingTopic(null);
-      setShowAutoGenerate(false);
-    } catch (error) {
-      setGenerationError(error instanceof Error ? error.message : 'Lỗi không xác định');
-      setGeneratingTopic(null);
     }
   };
 
@@ -478,11 +477,7 @@ const Library: React.FC = () => {
                 {collection}
               </button>
             ))}
-          </div>
-
-          {/* Collection management */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-[var(--text-secondary)]">Quản lý:</span>
+            
             {showAddCollection ? (
               <div className="flex items-center gap-2">
                 <input
@@ -493,7 +488,13 @@ const Library: React.FC = () => {
                   className="p-1 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
                 />
                 <button 
-                  onClick={handleAddCollection}
+                  onClick={() => {
+                    if (newCollectionName.trim()) {
+                      createCollection(newCollectionName.trim());
+                      setNewCollectionName('');
+                      setShowAddCollection(false);
+                    }
+                  }}
                   className="text-green-500 hover:text-green-700"
                 >
                   ✓
@@ -606,7 +607,13 @@ const Library: React.FC = () => {
                                   type="checkbox"
                                   id={`${vocab.word}-${collection}`}
                                   checked={vocab.collections.includes(collection)}
-                                  onChange={() => toggleInCollection(vocab.word, collection)}
+                                  onChange={() => {
+                                    if (vocab.collections.includes(collection)) {
+                                      removeFromCollection(vocab.word, collection);
+                                    } else {
+                                      addToCollection(vocab.word, collection);
+                                    }
+                                  }}
                                   className="w-4 h-4"
                                 />
                                 <label 

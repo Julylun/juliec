@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLearning } from '../contexts/LearningContext';
@@ -7,13 +7,30 @@ import { generateReadingPrompt, ReadingTest } from '../data/readingPrompt';
 import { generateVocabularyPrompt, VocabularyInfo } from '../data/vocabularyPrompt';
 import { readingTopics, Topic } from '../data/readingTopics';
 import VocabularyPopup from '../components/VocabularyPopup';
+import SelectionPopup from '../components/SelectionPopup';
 import Arrow from '../components/icons/Arrow';
+
+interface HighlightInfo {
+  id: string;
+  text: string;
+  startOffset: number;
+  endOffset: number;
+  color: string;
+}
+
+const HIGHLIGHT_COLORS = [
+  { value: 'yellow', class: 'bg-yellow-200 dark:bg-yellow-500/30' },
+  { value: 'green', class: 'bg-green-200 dark:bg-green-500/30' },
+  { value: 'blue', class: 'bg-blue-200 dark:bg-blue-500/30' },
+  { value: 'pink', class: 'bg-pink-200 dark:bg-pink-500/30' },
+  { value: 'purple', class: 'bg-purple-200 dark:bg-purple-500/30' },
+];
 
 const ReadingLearn: React.FC = () => {
   const navigate = useNavigate();
   const { topicId } = useParams<{ topicId: string }>();
   const { settings } = useSettings();
-  const { setSelectedTopic } = useLearning();
+  const { selectedTopic, setSelectedTopic } = useLearning();
   const [selectedAnswers, setSelectedAnswers] = useState<{[key: number]: number}>({});
   const [readingTest, setReadingTest] = useState<ReadingTest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,21 +47,48 @@ const ReadingLearn: React.FC = () => {
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const [savedVocabulary, setSavedVocabulary] = useState<VocabularyInfo[]>([]);
 
-  // Tìm topic dựa vào topicId từ URL - chỉ chạy một lần khi component mount
+  // Thêm state mới cho highlight và selection
+  const [showSelectionPopup, setShowSelectionPopup] = useState(false);
+  const [selectionInfo, setSelectionInfo] = useState<{
+    text: string;
+    range: Range | null;
+    position: { x: number; y: number };
+  } | null>(null);
+  const [highlights, setHighlights] = useState<HighlightInfo[]>([]);
+  const passageRef = useRef<HTMLDivElement>(null);
+
+  const [selectedHighlight, setSelectedHighlight] = useState<HighlightInfo | null>(null);
+  const [showHighlightMenu, setShowHighlightMenu] = useState(false);
+  const [highlightMenuPosition, setHighlightMenuPosition] = useState({ x: 0, y: 0 });
+  const [currentColor, setCurrentColor] = useState(HIGHLIGHT_COLORS[0].value);
+
+  // Tìm topic dựa vào topicId từ URL và context
   useEffect(() => {
     if (topicId && !isInitialized) {
+      // Đầu tiên kiểm tra trong context
+      if (selectedTopic?.id === topicId) {
+        setTopic(selectedTopic);
+        setIsInitialized(true);
+        return;
+      }
+
+      // Nếu không có trong context, tìm trong danh sách có sẵn
       const foundTopic = readingTopics.find(t => t.id === topicId);
       
       if (foundTopic) {
         setTopic(foundTopic);
-        setSelectedTopic(foundTopic); // Cập nhật context
+        setSelectedTopic(foundTopic);
+      } else if (topicId.startsWith('custom-')) {
+        // Nếu là custom topic nhưng không có trong context, quay lại trang chọn topic
+        navigate('/learn/reading');
+        return;
       } else {
         setError("Topic not found");
         setIsLoading(false);
       }
       setIsInitialized(true);
     }
-  }, [topicId, setSelectedTopic, isInitialized]);
+  }, [topicId, selectedTopic, setSelectedTopic, isInitialized, navigate]);
 
   // Memoize hàm generateTest để tránh tạo lại mỗi khi render
   const generateTest = useCallback(async () => {
@@ -87,64 +131,250 @@ const ReadingLearn: React.FC = () => {
   }, [topic, generateTest, isLoading, readingTest]);
 
   // Xử lý khi người dùng bôi đen từ vựng
-  const handleTextSelection = useCallback(async (event: MouseEvent) => {
-    // Kiểm tra xem sự kiện có phải từ button, input, hoặc các phần tử tương tác khác không
-    const target = event.target as HTMLElement;
-    if (
-      target.tagName === 'BUTTON' || 
-      target.tagName === 'INPUT' || 
-      target.tagName === 'LABEL' ||
-      target.closest('button') ||
-      target.closest('label') ||
-      target.closest('input')
-    ) {
-      return; // Không xử lý nếu click vào các phần tử tương tác
+  const handleTextSelection = useCallback((event: MouseEvent) => {
+    // Đóng các menu khác
+    setShowHighlightMenu(false);
+    setSelectedHighlight(null);
+
+    // Lấy selection hiện tại
+    const selection = window.getSelection();
+    if (!selection || selection.toString().trim() === '') {
+      setShowSelectionPopup(false);
+      setSelectionInfo(null);
+      return;
     }
 
-    const selection = window.getSelection();
-    if (!selection || selection.toString().trim() === '') return;
-    
-    // Sử dụng vị trí con trỏ chuột thay vì vị trí selection
-    const selectedText = selection.toString().trim();
-    if (selectedText.split(' ').length > 3) return; // Giới hạn tối đa 3 từ
-    
-    setSelectedWord(selectedText);
-    setPopupPosition({ 
-      x: event.clientX, 
-      y: event.clientY 
-    });
-    setIsLoadingVocabulary(true);
-    setVocabularyInfo(null);
-    
-    if (settings.geminiKey) {
-      try {
-        const geminiService = new GeminiService(settings.geminiKey);
-        const prompt = generateVocabularyPrompt(selectedText);
-        
-        const vocabInfo = await geminiService.generateVocabularyInfo(prompt, selectedText);
-        setVocabularyInfo(vocabInfo);
-      } catch (err) {
-        console.error("Error fetching vocabulary:", err);
-      } finally {
-        setIsLoadingVocabulary(false);
-      }
-    } else {
-      setIsLoadingVocabulary(false);
+    // Kiểm tra xem selection có thuộc về passage không
+    const range = selection.getRangeAt(0);
+    const passageElement = passageRef.current;
+    if (!passageElement || !passageElement.contains(range.commonAncestorContainer)) {
+      setShowSelectionPopup(false);
+      setSelectionInfo(null);
+      return;
     }
-  }, [settings.geminiKey]);
+
+    // Tính toán vị trí popup dựa trên selection range
+    const rect = range.getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    
+    // Đặt popup ở giữa đoạn text được chọn
+    const x = rect.left + (rect.width / 2);
+    // Đặt popup phía trên đoạn text, có tính đến scroll
+    const y = rect.top + scrollY - 10;
+
+    // Lưu thông tin selection
+    setSelectionInfo({
+      text: selection.toString().trim(),
+      range: range.cloneRange(),
+      position: { x, y }
+    });
+    setShowSelectionPopup(true);
+  }, []);
+
+  // Click outside để đóng menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Kiểm tra xem click có phải là trên popup hay không
+      if (showHighlightMenu && !target.closest('.highlight-menu')) {
+        setShowHighlightMenu(false);
+        setSelectedHighlight(null);
+      }
+
+      // Kiểm tra cho selection popup
+      if (showSelectionPopup && !target.closest('.selection-popup')) {
+        setShowSelectionPopup(false);
+        setSelectionInfo(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showHighlightMenu, showSelectionPopup]);
 
   // Thêm event listener cho việc bôi đen từ vựng
   useEffect(() => {
-    const handleMouseUp = (event: MouseEvent) => {
-      handleTextSelection(event);
-    };
-    
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    return () => {
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+    document.addEventListener('mouseup', handleTextSelection);
+    return () => document.removeEventListener('mouseup', handleTextSelection);
   }, [handleTextSelection]);
+
+  // Xử lý dịch từ
+  const handleTranslate = useCallback(async () => {
+    if (!selectionInfo?.text || !settings.geminiKey) return;
+
+    try {
+      setSelectedWord(selectionInfo.text);
+      setPopupPosition({
+        x: selectionInfo.position.x,
+        y: selectionInfo.position.y - window.scrollY // Điều chỉnh vị trí theo scroll
+      });
+      setIsLoadingVocabulary(true);
+      setShowSelectionPopup(false);
+
+      const geminiService = new GeminiService(settings.geminiKey);
+      const prompt = generateVocabularyPrompt(selectionInfo.text);
+      const vocabInfo = await geminiService.generateVocabularyInfo(prompt, selectionInfo.text);
+      
+      setVocabularyInfo(vocabInfo);
+    } catch (err) {
+      console.error("Error fetching vocabulary:", err);
+    } finally {
+      setIsLoadingVocabulary(false);
+      // Clear selection sau khi hoàn thành
+      window.getSelection()?.removeAllRanges();
+    }
+  }, [selectionInfo, settings.geminiKey]);
+
+  // Xử lý highlight
+  const handleHighlight = useCallback(() => {
+    if (!selectionInfo?.range || !passageRef.current) return;
+
+    try {
+      const range = selectionInfo.range;
+      const text = range.toString().trim();
+      
+      // Tính toán offset tương đối với container
+      const preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(passageRef.current);
+      preCaretRange.setEnd(range.startContainer, range.startOffset);
+      const start = preCaretRange.toString().length;
+      const end = start + text.length;
+
+      // Kiểm tra xem có highlight nào trùng hoặc chồng lấn không
+      const hasOverlap = highlights.some(h => {
+        // Trường hợp hoàn toàn trùng nhau
+        if (h.startOffset === start && h.endOffset === end) {
+          return true;
+        }
+        
+        // Trường hợp chồng lấn một phần
+        const isOverlapping = (
+          (start >= h.startOffset && start < h.endOffset) || // Điểm đầu nằm trong highlight cũ
+          (end > h.startOffset && end <= h.endOffset) || // Điểm cuối nằm trong highlight cũ
+          (start <= h.startOffset && end >= h.endOffset) // Highlight mới bao trọn highlight cũ
+        );
+        
+        return isOverlapping;
+      });
+
+      if (hasOverlap) {
+        console.log('Highlight overlaps with existing one');
+        return;
+      }
+
+      const newHighlight = {
+        id: `highlight-${Date.now()}`,
+        text: text,
+        startOffset: start,
+        endOffset: end,
+        color: currentColor
+      };
+
+      setHighlights(prev => {
+        // Sắp xếp highlights theo thứ tự để tránh vấn đề render
+        const newHighlights = [...prev, newHighlight].sort((a, b) => a.startOffset - b.startOffset);
+        return newHighlights;
+      });
+      
+      setShowSelectionPopup(false);
+      setSelectionInfo(null);
+
+      // Clear selection
+      window.getSelection()?.removeAllRanges();
+    } catch (error) {
+      console.error("Error highlighting text:", error);
+    }
+  }, [selectionInfo, currentColor, highlights]);
+
+  // Xử lý click vào highlight
+  const handleHighlightClick = useCallback((highlight: HighlightInfo, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setSelectedHighlight(highlight);
+    setHighlightMenuPosition({ x: event.clientX, y: event.clientY });
+    setShowHighlightMenu(true);
+  }, []);
+
+  // Xóa highlight
+  const handleDeleteHighlight = useCallback(() => {
+    if (!selectedHighlight) return;
+    
+    setHighlights(prev => prev.filter(h => h.id !== selectedHighlight.id));
+    setShowHighlightMenu(false);
+    setSelectedHighlight(null);
+  }, [selectedHighlight]);
+
+  // Đổi màu highlight
+  const handleChangeHighlightColor = useCallback((color: string) => {
+    if (!selectedHighlight) return;
+    
+    console.log('Changing color:', { highlightId: selectedHighlight.id, newColor: color });
+    
+    setHighlights(prev => {
+      const newHighlights = prev.map(h => 
+        h.id === selectedHighlight.id ? { ...h, color } : h
+      );
+      console.log('New highlights:', newHighlights);
+      return newHighlights;
+    });
+    
+    setSelectedHighlight(prev => {
+      if (!prev) return null;
+      const updated = { ...prev, color };
+      console.log('Updated selected highlight:', updated);
+      return updated;
+    });
+  }, [selectedHighlight]);
+
+  // Render highlighted text
+  const renderHighlightedText = useCallback((text: string) => {
+    if (highlights.length === 0) return text;
+
+    let lastIndex = 0;
+    const parts: React.ReactNode[] = [];
+
+    // Highlights đã được sắp xếp khi thêm vào state
+    highlights.forEach((highlight, index) => {
+      // Add non-highlighted text before this highlight
+      if (highlight.startOffset > lastIndex) {
+        parts.push(
+          <span key={`text-${index}`}>
+            {text.slice(lastIndex, highlight.startOffset)}
+          </span>
+        );
+      }
+
+      // Add highlighted text
+      const highlightColor = HIGHLIGHT_COLORS.find(c => c.value === highlight.color);
+      const colorClass = highlightColor ? highlightColor.class : HIGHLIGHT_COLORS[0].class;
+      
+      parts.push(
+        <span
+          key={`highlight-${highlight.id}`}
+          className={`cursor-pointer ${colorClass}`}
+          onClick={(e) => handleHighlightClick(highlight, e)}
+          data-highlight-id={highlight.id}
+        >
+          {text.slice(highlight.startOffset, highlight.endOffset)}
+        </span>
+      );
+
+      lastIndex = highlight.endOffset;
+    });
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(
+        <span key="text-end">
+          {text.slice(lastIndex)}
+        </span>
+      );
+    }
+
+    return <>{parts}</>;
+  }, [highlights, handleHighlightClick]);
 
   const handleClosePopup = () => {
     setSelectedWord(null);
@@ -305,10 +535,11 @@ const ReadingLearn: React.FC = () => {
 
         {/* Reading Passage */}
         <div 
+          ref={passageRef}
           className="mb-8 p-4 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]"
         >
           <p className="text-[var(--text-primary)] whitespace-pre-line">
-            {readingTest.passage}
+            {readingTest && renderHighlightedText(readingTest.passage)}
           </p>
         </div>
 
@@ -382,18 +613,65 @@ const ReadingLearn: React.FC = () => {
             </button>
           )}
         </div>
-      </div>
 
-      {/* Vocabulary Popup */}
-      {selectedWord && (
-        <VocabularyPopup
-          word={selectedWord}
-          position={popupPosition}
-          onClose={handleClosePopup}
-          vocabularyInfo={vocabularyInfo}
-          isLoading={isLoadingVocabulary}
-        />
-      )}
+        {/* Highlight Menu */}
+        {showHighlightMenu && selectedHighlight && (
+          <div
+            className="fixed z-50 bg-[var(--bg-primary)] rounded-lg shadow-lg border border-[var(--border-color)] p-2 highlight-menu"
+            style={{
+              left: `${highlightMenuPosition.x}px`,
+              top: `${highlightMenuPosition.y + 10}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-1">
+                {HIGHLIGHT_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => handleChangeHighlightColor(color.value)}
+                    className={`w-6 h-6 rounded-full ${color.class} border border-gray-300 
+                      ${selectedHighlight.color === color.value ? 'ring-2 ring-blue-500' : ''}
+                      hover:ring-2 hover:ring-blue-300 transition-all`}
+                    title={color.value}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={handleDeleteHighlight}
+                className="flex items-center gap-2 px-3 py-1 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-red-500"
+              >
+                <span role="img" aria-label="delete" className="text-sm">
+                  🗑️
+                </span>
+                <span className="text-sm">Xóa</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Selection Popup */}
+        {showSelectionPopup && selectionInfo && (
+          <div className="selection-popup">
+            <SelectionPopup
+              position={selectionInfo.position}
+              onTranslate={handleTranslate}
+              onHighlight={handleHighlight}
+            />
+          </div>
+        )}
+
+        {/* Vocabulary Popup */}
+        {selectedWord && (
+          <VocabularyPopup
+            word={selectedWord}
+            position={popupPosition}
+            onClose={handleClosePopup}
+            vocabularyInfo={vocabularyInfo}
+            isLoading={isLoadingVocabulary}
+          />
+        )}
+      </div>
     </div>
   );
 };
