@@ -19,7 +19,7 @@ JulieC là một ứng dụng web giúp người dùng học từ vựng TOEIC m
 ### ⚙️ Tùy chỉnh
 - Chọn model AI (Gemini Pro/Gemini Pro Vision)
 - Giao diện sáng/tối
-- Cấu hình API key
+- Cấu hình API key trong ứng dụng
 
 ## 🛠️ Công nghệ sử dụng
 - **Frontend:** React, TypeScript, TailwindCSS
@@ -27,6 +27,7 @@ JulieC là một ứng dụng web giúp người dùng học từ vựng TOEIC m
 - **AI Integration:** Google Gemini API
 - **Routing:** React Router
 - **Build Tool:** Vite
+- **Package Manager:** pnpm
 
 ## 📦 Cài đặt
 
@@ -38,24 +39,19 @@ cd juliec
 
 2. Cài đặt dependencies:
 ```bash
-npm install
+pnpm install
 ```
 
-3. Tạo file .env và thêm Gemini API key:
-```
-VITE_GEMINI_API_KEY=your_api_key_here
-```
-
-4. Chạy ứng dụng ở môi trường development:
+3. Chạy ứng dụng ở môi trường development:
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ## 🔑 Cấu hình API Key
 
 1. Truy cập [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Tạo API key mới
-3. Thêm API key vào phần Cài đặt trong ứng dụng
+3. Thêm API key vào phần Cài đặt trong ứng dụng (Settings > API Key)
 
 ## 📄 Cấu trúc thư mục
 
