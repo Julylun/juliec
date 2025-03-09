@@ -18,6 +18,12 @@ const Learn: React.FC = () => {
       icon: '🔄',
       description: 'Học từ vựng với thẻ ghi nhớ'
     },
+    { 
+      title: 'Translate', 
+      path: '/learn/translate',
+      icon: '🔠',
+      description: 'Luyện tập dịch Anh-Việt với các chủ đề khác nhau'
+    },
   ];
 
   return (

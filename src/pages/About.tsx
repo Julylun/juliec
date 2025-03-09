@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Arrow from '../components/icons/Arrow';
-
-const APP_VERSION = '0.2';
+import { APP_VERSION, APP_INFO } from '../constants/appInfo';
 
 const About: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +19,7 @@ const About: React.FC = () => {
             >
               <Arrow className="w-6 h-6" />
             </button>
-            <h1 className="text-2xl font-bold text-[var(--text-primary)]">Về JULIEC</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)]">Về {APP_INFO.name}</h1>
           </div>
         </div>
         <div className="h-px w-full bg-[var(--border-color)] opacity-30"></div>
@@ -32,15 +31,15 @@ const About: React.FC = () => {
           {/* App Info */}
           <div className="p-6 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
             <div className="flex items-center justify-center mb-6">
-              <h2 className="text-3xl font-bold text-[var(--text-primary)]">JULIEC</h2>
+              <h2 className="text-3xl font-bold text-[var(--text-primary)]">{APP_INFO.name}</h2>
               <span className="ml-2 text-sm text-[var(--text-secondary)]">v{APP_VERSION}</span>
             </div>
             <p className="text-[var(--text-secondary)] text-center mb-6">
-              Ứng dụng học tiếng Anh thông minh với sự hỗ trợ của AI
+              {APP_INFO.description}
             </p>
             <div className="flex justify-center">
               <a
-                href="https://github.com/Julylun"
+                href={APP_INFO.github}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center text-blue-500 hover:underline"
@@ -81,18 +80,18 @@ const About: React.FC = () => {
             <h3 className="text-xl font-semibold mb-4 text-[var(--text-primary)]">Nhà phát triển</h3>
             <div className="flex items-center space-x-4">
               <img
-                src="https://github.com/Julylun.png"
-                alt="Julylun"
+                src={APP_INFO.developer.avatar}
+                alt={APP_INFO.developer.name}
                 className="w-16 h-16 rounded-full"
               />
               <div>
-                <h4 className="font-medium text-[var(--text-primary)]">Julylun</h4>
+                <h4 className="font-medium text-[var(--text-primary)]">{APP_INFO.developer.name}</h4>
                 <p className="text-[var(--text-secondary)]">
-                  Sinh viên tại Đại học Công nghệ Thông tin và Truyền thông Việt - Hàn
+                  {APP_INFO.developer.description}
                 </p>
                 <div className="mt-2 flex space-x-3">
                   <a
-                    href="https://github.com/Julylun"
+                    href={APP_INFO.developer.github}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

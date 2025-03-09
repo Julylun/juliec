@@ -9,6 +9,8 @@ import Reading from "../pages/Reading";
 import ReadingLearn from "../pages/ReadingLearn";
 import FlashCard from "../pages/FlashCard";
 import About from "../pages/About";
+import Translate from "../pages/Translate";
+import TranslateLearn from "../pages/TranslateLearn";
 import PageTransition from "../components/PageTransition";
 
 const AppRoutes: React.FC = () => {
@@ -22,6 +24,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/learn/reading" element={<PageTransition><Reading /></PageTransition>} />
         <Route path="/learn/reading/:topicId" element={<PageTransition><ReadingLearn /></PageTransition>} />
         <Route path="/learn/flashcard" element={<PageTransition><FlashCard /></PageTransition>} />
+        <Route path="/learn/translate" element={<PageTransition><Translate /></PageTransition>} />
+        <Route path="/learn/translate/:topicId" element={<PageTransition><TranslateLearn /></PageTransition>} />
         <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
         <Route path="/setting" element={<PageTransition><Setting /></PageTransition>} />
         <Route path="/about" element={<PageTransition><About /></PageTransition>} />

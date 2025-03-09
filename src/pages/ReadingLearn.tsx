@@ -102,7 +102,8 @@ const ReadingLearn: React.FC = () => {
       const geminiService = new GeminiService(settings.geminiKey, settings.geminiModel);
       const prompt = generateReadingPrompt(
         topic.title,
-        topic.difficulty
+        topic.difficulty,
+        settings.englishStandard
       );
 
       const test = await geminiService.generateReadingTest(
@@ -121,7 +122,7 @@ const ReadingLearn: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [topic, settings.geminiKey, settings.geminiModel]);
+  }, [topic, settings.geminiKey, settings.geminiModel, settings.englishStandard]);
 
   // Gọi API chỉ khi topic thay đổi và chưa có readingTest
   useEffect(() => {

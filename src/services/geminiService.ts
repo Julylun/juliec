@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ReadingTest } from "../data/readingPrompt";
 import { VocabularyInfo } from "../data/vocabularyPrompt";
 import { GeminiModelVersion } from "../types/settings";
+import { TranslateText, TranslationFeedback } from "../data/translatePrompt";
 
 // Mock data để sử dụng khi API bị lỗi quota
 const MOCK_READING_TESTS: { [key: string]: ReadingTest } = {
@@ -455,5 +456,321 @@ export class GeminiService {
       console.error('Error generating content:', error);
       return null;
     }
+  }
+
+  async generateTranslateText(prompt: string, topicTitle: string): Promise<TranslateText | null> {
+    try {
+      // Chọn model phù hợp
+      const activeModel = this.useFlashModel ? this.flashModel : this.model;
+      console.log(`Đang gửi request đến model: ${this.useFlashModel ? 'gemini-2.0-flash' : 'gemini-2.0-pro-exp-02-05'}`);
+      console.log("Prompt:", prompt);
+      
+      console.time("API Response Time");
+      const result = await activeModel.generateContent(prompt);
+      console.timeEnd("API Response Time");
+      
+      const response = await result.response;
+      const text = response.text();
+      
+      console.log("=== RESPONSE FROM GOOGLE API ===");
+      console.log(text);
+      console.log("===============================");
+      
+      // Tìm và trích xuất phần JSON từ response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error("Không tìm thấy JSON trong response");
+        return null;
+      }
+
+      // Làm sạch chuỗi JSON trước khi parse
+      let jsonStr = jsonMatch[0];
+      
+      // Loại bỏ các ký tự điều khiển không hợp lệ trong JSON
+      jsonStr = jsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+      
+      // Xử lý các ký tự đặc biệt trong chuỗi
+      jsonStr = jsonStr.replace(/\\(?!["\\/bfnrt])/g, "\\\\");
+      
+      console.log("=== CLEANED JSON ===");
+      console.log(jsonStr);
+      console.log("=====================");
+      
+      try {
+        // Tạo một đối tượng TranslateText trực tiếp nếu parse thất bại
+        let translateText: TranslateText;
+        
+        try {
+          translateText = JSON.parse(jsonStr) as TranslateText;
+        } catch (initialParseError) {
+          console.error("Lỗi khi parse JSON ban đầu, thử phương pháp khác:", initialParseError);
+          
+          // Thử trích xuất passage trực tiếp từ chuỗi nếu parse thất bại
+          const passageMatch = jsonStr.match(/"passage"\s*:\s*"([^"]+)"/);
+          if (passageMatch && passageMatch[1]) {
+            translateText = { passage: passageMatch[1] };
+          } else {
+            // Nếu không thể trích xuất, tạo một đối tượng với toàn bộ văn bản
+            // Loại bỏ các phần không phải nội dung chính
+            const cleanedText = text
+              .replace(/```json/g, '')
+              .replace(/```/g, '')
+              .replace(/\{[\s\S]*?"passage"\s*:\s*"/g, '')
+              .replace(/"[\s\S]*\}/g, '');
+              
+            translateText = { passage: cleanedText.trim() };
+          }
+        }
+        
+        // Validate response format
+        if (!translateText.passage) {
+          console.error("Response không đúng format, thiếu trường passage");
+          return null;
+        }
+        
+        console.log("Xử lý dữ liệu thành công");
+        console.log(`Bài dịch có ${translateText.passage.length} ký tự`);
+        
+        return translateText;
+      } catch (parseError) {
+        console.error("Lỗi khi xử lý dữ liệu:", parseError);
+        return null;
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi Gemini API:", error);
+      return null;
+    }
+  }
+
+  async evaluateTranslation(prompt: string, originalText: string, userTranslation: string): Promise<TranslationFeedback | null> {
+    try {
+      // Chọn model phù hợp
+      const activeModel = this.useFlashModel ? this.flashModel : this.model;
+      console.log(`Đang gửi request đánh giá bản dịch đến model`);
+      
+      console.time("API Response Time");
+      const result = await activeModel.generateContent(prompt);
+      console.timeEnd("API Response Time");
+      
+      const response = await result.response;
+      const text = response.text();
+      
+      console.log("=== RESPONSE FROM GOOGLE API ===");
+      console.log(text);
+      console.log("===============================");
+      
+      // Tìm và trích xuất phần JSON từ response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error("Không tìm thấy JSON trong response");
+        return this.createDefaultFeedback(text, userTranslation, originalText);
+      }
+
+      // Làm sạch chuỗi JSON trước khi parse
+      let jsonStr = jsonMatch[0];
+      
+      // Loại bỏ các ký tự điều khiển không hợp lệ trong JSON
+      jsonStr = jsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+      
+      // Xử lý các ký tự đặc biệt trong chuỗi
+      jsonStr = jsonStr.replace(/\\(?!["\\/bfnrt])/g, "\\\\");
+      
+      // Xử lý các trường hợp đặc biệt
+      jsonStr = jsonStr.replace(/"errorType": "error" or "suggestion"/g, '"errorType": "error"');
+      
+      console.log("=== CLEANED JSON ===");
+      console.log(jsonStr);
+      console.log("=====================");
+      
+      try {
+        // Tạo một đối tượng TranslationFeedback mặc định nếu parse thất bại
+        let feedback: TranslationFeedback;
+        
+        try {
+          feedback = JSON.parse(jsonStr) as TranslationFeedback;
+        } catch (initialParseError) {
+          console.error("Lỗi khi parse JSON ban đầu, thử phương pháp khác:", initialParseError);
+          
+          // Thử phân tích thủ công
+          return this.parseManualFeedback(text, userTranslation, originalText);
+        }
+        
+        // Validate response format
+        if (typeof feedback.score !== 'number') {
+          feedback.score = 50; // Giá trị mặc định
+        }
+        
+        if (!feedback.feedback) {
+          feedback.feedback = "Không có đánh giá chi tiết.";
+        }
+        
+        if (!Array.isArray(feedback.errors)) {
+          feedback.errors = [];
+        }
+        
+        // Thêm errorType và englishText nếu chưa có
+        feedback.errors = feedback.errors.map(error => {
+          // Thêm errorType nếu chưa có
+          if (!error.errorType) {
+            // Phân loại lỗi dựa trên nội dung giải thích
+            const errorKeywords = ['sai', 'lỗi', 'không chính xác', 'không đúng', 'incorrect', 'error', 'mistake', 'wrong'];
+            const hasErrorKeyword = errorKeywords.some(keyword => 
+              error.explanation.toLowerCase().includes(keyword)
+            );
+            
+            error.errorType = hasErrorKeyword ? 'error' : 'suggestion';
+          }
+          
+          // Thêm englishText nếu chưa có
+          if (!error.englishText && error.original) {
+            // Tìm đoạn văn tiếng Anh tương ứng
+            error.englishText = this.findCorrespondingEnglishText(originalText, error.original);
+          }
+          
+          return error;
+        });
+        
+        console.log("Xử lý dữ liệu thành công");
+        console.log(`Đánh giá có ${feedback.errors.length} lỗi được phát hiện`);
+        
+        return feedback;
+      } catch (parseError) {
+        console.error("Lỗi khi xử lý dữ liệu:", parseError);
+        return this.createDefaultFeedback(text, userTranslation, originalText);
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi Gemini API:", error);
+      return null;
+    }
+  }
+  
+  // Hàm tìm đoạn văn tiếng Anh tương ứng
+  private findCorrespondingEnglishText(originalText: string, vietnameseText: string): string {
+    console.log("Tìm đoạn văn tiếng Anh tương ứng cho:", vietnameseText);
+    
+    // Nếu văn bản tiếng Việt quá ngắn, trả về toàn bộ văn bản gốc
+    if (vietnameseText.length < 10) {
+      console.log("Văn bản tiếng Việt quá ngắn, trả về toàn bộ văn bản gốc");
+      return originalText;
+    }
+    
+    // Chia văn bản thành các câu
+    const englishSentences = originalText.split(/(?<=[.!?])\s+/);
+    
+    // Nếu chỉ có một câu, trả về toàn bộ văn bản
+    if (englishSentences.length <= 1) {
+      console.log("Văn bản tiếng Anh chỉ có một câu, trả về toàn bộ văn bản");
+      return originalText;
+    }
+    
+    // Tạo các đoạn văn bản có độ dài khác nhau để so sánh
+    const segments: string[] = [];
+    
+    // Thêm từng câu riêng lẻ
+    englishSentences.forEach(sentence => {
+      segments.push(sentence);
+    });
+    
+    // Thêm các cặp câu liên tiếp
+    for (let i = 0; i < englishSentences.length - 1; i++) {
+      segments.push(englishSentences[i] + ' ' + englishSentences[i + 1]);
+    }
+    
+    // Thêm các nhóm 3 câu liên tiếp
+    for (let i = 0; i < englishSentences.length - 2; i++) {
+      segments.push(englishSentences[i] + ' ' + englishSentences[i + 1] + ' ' + englishSentences[i + 2]);
+    }
+    
+    // Sắp xếp các đoạn theo độ dài, từ dài nhất đến ngắn nhất
+    segments.sort((a, b) => b.length - a.length);
+    
+    // Tìm đoạn văn có độ dài phù hợp nhất
+    const vietnameseLength = vietnameseText.length;
+    let bestMatch = originalText;
+    let minDiffRatio = Number.MAX_VALUE;
+    
+    segments.forEach(segment => {
+      // Tính tỷ lệ chênh lệch độ dài
+      const lengthRatio = Math.abs(segment.length / vietnameseLength - 0.8); // Tiếng Anh thường ngắn hơn tiếng Việt khoảng 20%
+      
+      if (lengthRatio < minDiffRatio) {
+        minDiffRatio = lengthRatio;
+        bestMatch = segment;
+      }
+    });
+    
+    console.log("Đoạn văn tiếng Anh tìm được:", bestMatch);
+    
+    // Nếu đoạn văn quá ngắn, trả về toàn bộ văn bản
+    if (bestMatch.length < 20) {
+      console.log("Đoạn văn tìm được quá ngắn, trả về toàn bộ văn bản");
+      return originalText;
+    }
+    
+    return bestMatch;
+  }
+  
+  // Hàm tạo feedback mặc định
+  private createDefaultFeedback(text: string, userTranslation: string, originalText: string): TranslationFeedback {
+    // Tạo một đối tượng feedback mặc định
+    const feedback: TranslationFeedback = {
+      score: 70,
+      feedback: "Không thể phân tích đánh giá chi tiết. Đây là đánh giá tổng quát.",
+      errors: []
+    };
+    
+    // Cố gắng trích xuất thông tin từ văn bản
+    const scoreMatch = text.match(/score["']?\s*:\s*(\d+)/i);
+    if (scoreMatch && scoreMatch[1]) {
+      feedback.score = parseInt(scoreMatch[1], 10);
+    }
+    
+    const feedbackMatch = text.match(/feedback["']?\s*:\s*["']([^"']+)["']/i);
+    if (feedbackMatch && feedbackMatch[1]) {
+      feedback.feedback = feedbackMatch[1];
+    } else {
+      // Nếu không tìm thấy feedback, sử dụng toàn bộ văn bản
+      feedback.feedback = text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .replace(/\{[\s\S]*?\}/g, '')
+        .trim();
+    }
+    
+    return feedback;
+  }
+  
+  // Hàm phân tích thủ công phản hồi
+  private parseManualFeedback(text: string, userTranslation: string, originalText: string): TranslationFeedback {
+    const feedback = this.createDefaultFeedback(text, userTranslation, originalText);
+    
+    // Tìm các lỗi từ văn bản
+    const errorRegex = /"original"\s*:\s*"([^"]+)"\s*,\s*"suggestion"\s*:\s*"([^"]+)"\s*,\s*"explanation"\s*:\s*"([^"]+)"\s*,\s*"startIndex"\s*:\s*(\d+)\s*,\s*"endIndex"\s*:\s*(\d+)/g;
+    
+    let match;
+    while ((match = errorRegex.exec(text)) !== null) {
+      const [_, original, suggestion, explanation, startIndex, endIndex] = match;
+      
+      // Phân loại lỗi dựa trên nội dung giải thích
+      const errorKeywords = ['sai', 'lỗi', 'không chính xác', 'không đúng', 'incorrect', 'error', 'mistake', 'wrong'];
+      const hasErrorKeyword = errorKeywords.some(keyword => 
+        explanation.toLowerCase().includes(keyword)
+      );
+      
+      // Tìm đoạn văn tiếng Anh tương ứng
+      const englishText = this.findCorrespondingEnglishText(originalText, original);
+      
+      feedback.errors.push({
+        original,
+        suggestion,
+        explanation,
+        startIndex: parseInt(startIndex, 10),
+        endIndex: parseInt(endIndex, 10),
+        errorType: hasErrorKeyword ? 'error' : 'suggestion',
+        englishText
+      });
+    }
+    
+    return feedback;
   }
 } 

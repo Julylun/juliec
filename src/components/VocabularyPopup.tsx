@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VocabularyInfo } from '../data/vocabularyPrompt';
 import { useVocabulary } from '../contexts/VocabularyContext';
+import SpeakButton from './SpeakButton';
 
 interface VocabularyPopupProps {
   word: string;
@@ -134,9 +135,12 @@ const VocabularyPopup: React.FC<VocabularyPopupProps> = ({
             </div>
           ) : vocabularyInfo ? (
             <div className="space-y-3">
-              <div>
-                <h4 className="text-xl font-bold text-[var(--text-primary)]">{vocabularyInfo.word}</h4>
-                <p className="text-sm text-[var(--text-secondary)]">{vocabularyInfo.ipa}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xl font-bold text-[var(--text-primary)]">{vocabularyInfo.word}</h4>
+                  <p className="text-sm text-[var(--text-secondary)]">{vocabularyInfo.ipa}</p>
+                </div>
+                <SpeakButton text={vocabularyInfo.word} size="md" />
               </div>
               
               <div>
@@ -146,7 +150,10 @@ const VocabularyPopup: React.FC<VocabularyPopupProps> = ({
               
               <div>
                 <h5 className="text-sm font-semibold text-[var(--text-secondary)]">Ví dụ:</h5>
-                <p className="text-[var(--text-primary)] italic">{vocabularyInfo.example}</p>
+                <div className="flex items-start gap-2">
+                  <p className="text-[var(--text-primary)] italic flex-grow">{vocabularyInfo.example}</p>
+                  <SpeakButton text={vocabularyInfo.example} size="sm" className="mt-0.5" />
+                </div>
               </div>
               
               <button

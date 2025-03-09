@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLearning } from '../contexts/LearningContext';
-import { readingTopics, Topic } from '../data/readingTopics';
+import { translateTopics, Topic } from '../data/translateTopics';
+import { GeminiService } from '../services/geminiService';
 
-const Reading: React.FC = () => {
+const Translate: React.FC = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const { setSelectedTopic } = useLearning();
@@ -13,15 +14,20 @@ const Reading: React.FC = () => {
   const [showCustomTopicModal, setShowCustomTopicModal] = useState(false);
   const [customTopicTitle, setCustomTopicTitle] = useState('');
   const [customTopicDifficulty, setCustomTopicDifficulty] = useState<Topic['difficulty']>('medium');
+  const [inputText, setInputText] = useState('');
+  const [outputText, setOutputText] = useState('');
+  const [translateDirection, setTranslateDirection] = useState<'en-vi' | 'vi-en'>('en-vi');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  console.log("Reading page rendering");
+  console.log("Translate page rendering");
 
   // Kiểm tra xem tiêu chuẩn hiện tại có phải là beta không
   const isCurrentStandardBeta = settings.englishStandard === 'ielts' || settings.englishStandard === 'cefr';
 
   // Filter topics based on search query
   const filteredTopics = useMemo(() => {
-    return readingTopics.filter(topic =>
+    return translateTopics.filter(topic =>
       topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       topic.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -33,8 +39,8 @@ const Reading: React.FC = () => {
       setSelectedTopic(localSelectedTopic);
       
       // Chuyển hướng đến trang học với topicId trong URL
-      console.log("Navigating to learning page with topicId:", localSelectedTopic.id);
-      navigate(`/learn/reading/${localSelectedTopic.id}`);
+      console.log("Navigating to translate page with topicId:", localSelectedTopic.id);
+      navigate(`/learn/translate/${localSelectedTopic.id}`);
     }
   };
 
@@ -45,14 +51,13 @@ const Reading: React.FC = () => {
       id: `custom-${Date.now()}`,
       title: customTopicTitle,
       description: 'Custom topic created by user',
-      difficulty: customTopicDifficulty,
-      questionsCount: 4
+      difficulty: customTopicDifficulty
     };
 
     setLocalSelectedTopic(customTopic);
     setSelectedTopic(customTopic);
     setShowCustomTopicModal(false);
-    navigate(`/learn/reading/${customTopic.id}`);
+    navigate(`/learn/translate/${customTopic.id}`);
   };
 
   const getDifficultyColor = (difficulty: Topic['difficulty']) => {
@@ -68,12 +73,59 @@ const Reading: React.FC = () => {
     }
   };
 
+  const handleTranslate = async () => {
+    if (!inputText.trim() || !settings.geminiKey) return;
+    
+    setIsTranslating(true);
+    setError(null);
+    
+    try {
+      const geminiService = new GeminiService(settings.geminiKey, settings.geminiModel);
+      
+      // Tạo prompt với tiêu chuẩn tiếng Anh từ cài đặt
+      const prompt = `
+You are a professional English-Vietnamese translator specializing in ${settings.englishStandard.toUpperCase()} standards.
+Please translate the following ${translateDirection === 'en-vi' ? 'English text to Vietnamese' : 'Vietnamese text to English'}.
+The translation should be accurate, natural, and maintain the original meaning and tone.
+
+${translateDirection === 'en-vi' 
+  ? `For this TOEIC/IELTS/CEFR translation, pay special attention to:
+- Correct terminology according to ${settings.englishStandard.toUpperCase()} standards
+- Appropriate register and formality
+- Natural expression in the target language`
+  : `When translating to English, ensure:
+- Appropriate vocabulary for ${settings.englishStandard.toUpperCase()} level
+- Correct grammar and natural phrasing
+- Equivalent expressions that sound natural to native speakers`
+}
+
+Text to translate:
+"""
+${inputText}
+"""
+
+Provide only the translation without any additional comments or explanations.`;
+      
+      const translatedText = await geminiService.generateContent(prompt);
+      
+      if (translatedText) {
+        setOutputText(translatedText);
+      } else {
+        setError("Không thể dịch văn bản. Vui lòng thử lại.");
+      }
+    } catch (err) {
+      setError("Lỗi khi dịch: " + (err as Error).message);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2 text-[var(--text-primary)]">Reading Topics</h1>
+        <h1 className="text-3xl font-bold mb-2 text-[var(--text-primary)]">Translation Practice</h1>
         <p className="text-[var(--text-secondary)] mb-8 flex items-center">
-          Select a topic to practice {settings.englishStandard.toUpperCase()} reading skills
+          Select a topic to practice {settings.englishStandard.toUpperCase()} translation skills
           {isCurrentStandardBeta && (
             <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 rounded">
               Beta
@@ -85,7 +137,7 @@ const Reading: React.FC = () => {
         <div className="mb-8">
           <input
             type="text"
-            placeholder="Search topics..."
+            placeholder="Tìm kiếm chủ đề..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full p-3 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
@@ -103,7 +155,7 @@ const Reading: React.FC = () => {
               <span className="text-3xl mb-2">✨</span>
               <h3 className="text-xl font-semibold">Tạo chủ đề mới</h3>
               <p className="text-[var(--text-secondary)] text-center mt-2">
-                Tự tạo chủ đề bài đọc theo ý muốn
+                Tự tạo chủ đề bài dịch theo ý muốn
               </p>
             </div>
           </button>
@@ -129,9 +181,6 @@ const Reading: React.FC = () => {
               <div className="flex justify-between text-sm">
                 <span className={getDifficultyColor(topic.difficulty)}>
                   {topic.difficulty}
-                </span>
-                <span className="text-[var(--text-secondary)]">
-                  {topic.questionsCount} questions
                 </span>
               </div>
             </div>
@@ -230,4 +279,4 @@ const Reading: React.FC = () => {
   );
 };
 
-export default Reading; 
+export default Translate; 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Background from './Background';
+import VersionInfo from './VersionInfo';
 import { useSettings } from '../contexts/SettingsContext';
 
 const Menu: React.FC = () => {
@@ -58,6 +59,9 @@ const Menu: React.FC = () => {
             </Link>
           ))}
         </nav>
+        
+        {/* Thêm component VersionInfo */}
+        <VersionInfo />
       </div>
     </>
   );

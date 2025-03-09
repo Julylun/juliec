@@ -4,7 +4,8 @@ import { useVocabulary, EnhancedVocabularyInfo } from '../contexts/VocabularyCon
 import { useSettings } from '../contexts/SettingsContext';
 import { GeminiService } from '../services/geminiService';
 import { generateVocabularyPrompt, VocabularyInfo } from '../data/vocabularyPrompt';
-import { TOEIC_TOPICS, ToeicVocabularyService } from '../services/toeicVocabularyService';
+import { VOCABULARY_TOPICS, VocabularyService } from '../services/vocabularyService';
+import SpeakButton from '../components/SpeakButton';
 
 type SortOption = 'date' | 'name' | 'studyCount';
 type FilterOption = 'all' | 'active' | 'inactive' | string; // string for collection names
@@ -25,6 +26,9 @@ const Library: React.FC = () => {
     removeCollection,
     addVocabulary
   } = useVocabulary();
+
+  // Kiểm tra xem tiêu chuẩn hiện tại có phải là beta không
+  const isCurrentStandardBeta = settings.englishStandard === 'ielts' || settings.englishStandard === 'cefr';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date');
@@ -134,7 +138,14 @@ const Library: React.FC = () => {
 
     try {
       console.log('Starting vocabulary generation for topic:', topicName);
-      const service = new ToeicVocabularyService(settings.geminiKey, settings.geminiModel);
+      console.log('Using English standard:', settings.englishStandard);
+      
+      const service = new VocabularyService(
+        settings.geminiKey, 
+        settings.geminiModel,
+        settings.englishStandard
+      );
+      
       const response = await service.generateVocabularyForTopic(topicName);
 
       if (!response.success || !response.vocabularyList) {
@@ -215,7 +226,10 @@ const Library: React.FC = () => {
 
     try {
       const geminiService = new GeminiService(settings.geminiKey, settings.geminiModel);
-      const prompt = generateVocabularyPrompt(newVocabularyWord.trim());
+      const prompt = generateVocabularyPrompt(
+        newVocabularyWord.trim(),
+        settings.englishStandard
+      );
       
       const vocabInfo = await geminiService.generateVocabularyInfo(prompt, newVocabularyWord.trim());
       
@@ -243,14 +257,24 @@ const Library: React.FC = () => {
     }
   };
 
+  // Thêm hàm xử lý sự kiện click cho nút phát âm
+  const handleSpeakClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2 text-[var(--text-primary)]">Thư viện từ vựng</h1>
-            <p className="text-[var(--text-secondary)]">
-              Quản lý tất cả từ vựng đã lưu
+            <p className="text-[var(--text-secondary)] flex items-center">
+              Quản lý từ vựng {settings.englishStandard.toUpperCase()} của bạn
+              {isCurrentStandardBeta && (
+                <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 rounded">
+                  Beta
+                </span>
+              )}
             </p>
           </div>
           <div className="flex gap-2 mt-4 md:mt-0">
@@ -258,7 +282,7 @@ const Library: React.FC = () => {
               onClick={() => setShowAutoGenerate(true)}
               className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
-              🤖 Tạo từ vựng TOEIC
+              🤖 Tạo từ vựng {settings.englishStandard.toUpperCase()}
             </button>
             <button
               onClick={() => setShowAddVocabulary(true)}
@@ -274,8 +298,13 @@ const Library: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--bg-secondary)] rounded-lg shadow-lg max-w-2xl w-full p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-                  Tạo từ vựng TOEIC theo chủ đề
+                <h2 className="text-xl font-semibold text-[var(--text-primary)] flex items-center">
+                  Tạo từ vựng {settings.englishStandard.toUpperCase()} theo chủ đề
+                  {isCurrentStandardBeta && (
+                    <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 rounded">
+                      Beta
+                    </span>
+                  )}
                 </h2>
                 <button 
                   onClick={() => {
@@ -295,32 +324,29 @@ const Library: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {TOEIC_TOPICS.map(topic => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                {VOCABULARY_TOPICS.map(topic => (
                   <button
                     key={topic.id}
                     onClick={() => handleGenerateVocabulary(topic.id, topic.name)}
                     disabled={!!generatingTopic}
-                    className={`p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] 
-                      hover:border-blue-500 transition-colors ${
-                      generatingTopic === topic.id
-                        ? 'animate-pulse border-blue-500'
-                        : ''
+                    className={`p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] transition-colors flex items-center ${
+                      generatingTopic === topic.id ? 'opacity-70 cursor-not-allowed' : ''
                     }`}
                   >
-                    <div className="flex flex-col items-center text-center gap-2">
-                      <span className="text-2xl">{topic.icon}</span>
-                      <span className="text-[var(--text-primary)]">{topic.name}</span>
-                      {generatingTopic === topic.id && (
-                        <span className="text-sm text-blue-500">Đang tạo...</span>
-                      )}
+                    <span className="text-2xl mr-3">{topic.icon}</span>
+                    <div className="text-left">
+                      <div className="font-medium text-[var(--text-primary)]">{topic.name}</div>
+                      <div className="text-sm text-[var(--text-secondary)]">
+                        {generatingTopic === topic.id ? 'Đang tạo...' : `Tạo từ vựng ${settings.englishStandard.toUpperCase()}`}
+                      </div>
                     </div>
                   </button>
                 ))}
               </div>
 
               <p className="mt-4 text-sm text-[var(--text-secondary)]">
-                Mỗi chủ đề sẽ tạo ra 10 từ vựng TOEIC phổ biến và tự động thêm vào bộ sưu tập tương ứng.
+                Mỗi chủ đề sẽ tạo ra 10 từ vựng {settings.englishStandard.toUpperCase()} phổ biến và tự động thêm vào bộ sưu tập tương ứng.
               </p>
             </div>
           </div>
@@ -391,7 +417,17 @@ const Library: React.FC = () => {
                   </div>
                   <div className="text-left">
                     <h4 className="text-sm font-semibold text-[var(--text-secondary)]">Ví dụ:</h4>
-                    <p className="text-[var(--text-primary)] italic">{translatedVocabulary.example}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="text-[var(--text-primary)] italic">{translatedVocabulary.example}</p>
+                      {translatedVocabulary.example && (
+                        <SpeakButton 
+                          text={translatedVocabulary.example} 
+                          lang="en-US" 
+                          size="sm" 
+                          onClick={handleSpeakClick}
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -543,12 +579,28 @@ const Library: React.FC = () => {
                       <h3 className="text-xl font-semibold text-[var(--text-primary)]">
                         {vocab.word}
                       </h3>
+                      <SpeakButton 
+                        text={vocab.word} 
+                        lang="en-US" 
+                        size="sm" 
+                        onClick={handleSpeakClick}
+                      />
                       <span className="text-sm text-[var(--text-secondary)]">
                         {vocab.ipa}
                       </span>
                     </div>
                     <p className="text-[var(--text-primary)]">{vocab.meaning}</p>
-                    <p className="text-[var(--text-secondary)] italic text-sm">{vocab.example}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="text-[var(--text-secondary)] italic text-sm">{vocab.example}</p>
+                      {vocab.example && (
+                        <SpeakButton 
+                          text={vocab.example} 
+                          lang="en-US" 
+                          size="sm" 
+                          onClick={handleSpeakClick}
+                        />
+                      )}
+                    </div>
                     
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="text-xs text-[var(--text-secondary)]">

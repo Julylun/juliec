@@ -1,16 +1,20 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Topic } from '../data/readingTopics';
+import { Topic as ReadingTopic } from '../data/readingTopics';
+import { Topic as TranslateTopic } from '../data/translateTopics';
+
+// Tạo union type để hỗ trợ cả hai loại Topic
+export type TopicUnion = ReadingTopic | TranslateTopic;
 
 interface LearningState {
-  selectedTopic: Topic | null;
+  selectedTopic: TopicUnion | null;
   currentQuestion: number;
   score: number;
 }
 
 interface LearningContextType {
   learningState: LearningState;
-  selectedTopic: Topic | null;
-  setSelectedTopic: (topic: Topic | null) => void;
+  selectedTopic: TopicUnion | null;
+  setSelectedTopic: (topic: TopicUnion | null) => void;
   setCurrentQuestion: (questionNumber: number) => void;
   setScore: (score: number) => void;
   resetLearningState: () => void;
@@ -37,7 +41,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   console.log("LearningProvider rendering, state:", learningState);
 
-  const setSelectedTopic = (topic: Topic | null) => {
+  const setSelectedTopic = (topic: TopicUnion | null) => {
     console.log("Setting selected topic:", topic);
     setLearningState(prev => ({ ...prev, selectedTopic: topic }));
     

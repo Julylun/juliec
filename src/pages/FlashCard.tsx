@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVocabulary, EnhancedVocabularyInfo } from '../contexts/VocabularyContext';
 import { useSettings } from '../contexts/SettingsContext';
+import SpeakButton from '../components/SpeakButton';
 
 const FlashCard: React.FC = () => {
   const navigate = useNavigate();
@@ -82,6 +83,11 @@ const FlashCard: React.FC = () => {
     setFlipped(false);
   };
 
+  // Ngăn chặn sự kiện click từ nút phát âm lan ra thẻ cha
+  const handleSpeakClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-[var(--bg-primary)] p-4 md:p-8">
       <div className="text-center mb-4">
@@ -155,9 +161,14 @@ const FlashCard: React.FC = () => {
             >
               {/* Front side */}
               <div className="absolute w-full h-full flex flex-col items-center justify-center p-6 bg-[var(--bg-secondary)] rounded-xl shadow-lg border border-[var(--border-color)] backface-hidden">
-                <h2 className="text-3xl font-bold mb-2 text-[var(--text-primary)]">
-                  {filteredVocabulary[currentIndex].word}
-                </h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-3xl font-bold mb-2 text-[var(--text-primary)]">
+                    {filteredVocabulary[currentIndex].word}
+                  </h2>
+                  <div onClick={handleSpeakClick}>
+                    <SpeakButton text={filteredVocabulary[currentIndex].word} size="md" />
+                  </div>
+                </div>
                 <p className="text-[var(--text-secondary)]">
                   {filteredVocabulary[currentIndex].ipa}
                 </p>
@@ -190,9 +201,14 @@ const FlashCard: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-[var(--text-primary)]">Ví dụ:</h3>
-                    <p className="text-[var(--text-primary)] italic">
-                      {filteredVocabulary[currentIndex].example}
-                    </p>
+                    <div className="flex items-start gap-2">
+                      <p className="text-[var(--text-primary)] italic flex-grow">
+                        {filteredVocabulary[currentIndex].example}
+                      </p>
+                      <div onClick={handleSpeakClick}>
+                        <SpeakButton text={filteredVocabulary[currentIndex].example} size="sm" />
+                      </div>
+                    </div>
                   </div>
                   <div className="text-xs text-[var(--text-secondary)]">
                     Đã học: {filteredVocabulary[currentIndex].studyCount} lần

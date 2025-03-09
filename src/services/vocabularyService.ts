@@ -1,8 +1,8 @@
 import { GeminiService } from './geminiService';
-import { GeminiModelVersion } from '../types/settings';
+import { GeminiModelVersion, EnglishStandardType } from '../types/settings';
 
-// Định nghĩa các chủ đề TOEIC cơ bản
-export const TOEIC_TOPICS = [
+// Định nghĩa các chủ đề từ vựng cơ bản
+export const VOCABULARY_TOPICS = [
   { id: 'business', name: 'Kinh doanh & Văn phòng', icon: '💼' },
   { id: 'technology', name: 'Công nghệ & Internet', icon: '💻' },
   { id: 'travel', name: 'Du lịch & Giao thông', icon: '✈️' },
@@ -27,29 +27,52 @@ export interface TopicVocabularyResponse {
   error?: string;
 }
 
-export class ToeicVocabularyService {
+export class VocabularyService {
   private geminiService: GeminiService;
+  private englishStandard: EnglishStandardType;
 
-  constructor(apiKey: string, modelVersion: GeminiModelVersion) {
+  constructor(apiKey: string, modelVersion: GeminiModelVersion, englishStandard: EnglishStandardType = 'toeic') {
     this.geminiService = new GeminiService(apiKey, modelVersion);
+    this.englishStandard = englishStandard;
   }
 
   private generateTopicPrompt(topic: string): string {
-    return `Generate 10 essential TOEIC vocabulary words for the topic "${topic}" in Vietnamese. Response must be in this exact JSON format:
+    let standardSpecificInstructions = '';
+    let contextType = '';
+    
+    switch (this.englishStandard) {
+      case 'toeic':
+        standardSpecificInstructions = 'Words must be commonly used in TOEIC tests and business settings';
+        contextType = 'business/professional context';
+        break;
+      case 'ielts':
+        standardSpecificInstructions = 'Words must be commonly used in IELTS tests and academic settings';
+        contextType = 'academic context';
+        break;
+      case 'cefr':
+        standardSpecificInstructions = 'Words must align with CEFR standards and be useful for everyday communication';
+        contextType = 'everyday communication context';
+        break;
+      default:
+        standardSpecificInstructions = 'Words must be commonly used in general English';
+        contextType = 'general context';
+    }
+
+    return `Generate 10 essential ${this.englishStandard.toUpperCase()} vocabulary words for the topic "${topic}" in Vietnamese. Response must be in this exact JSON format:
 {
   "vocabularyList": [
     {
       "word": "example word (English)",
       "meaning": "Meaning (Vietnamese)",
       "ipa": "/pronunciation/ (word ipa)",
-      "example": "Example sentence using the word in business context (English"
+      "example": "Example sentence using the word in ${contextType} (English)"
     }
   ]
 }
 
 Requirements:
-1. Words must be commonly used in TOEIC tests and business settings
-2. Examples must be in business/professional context
+1. ${standardSpecificInstructions}
+2. Examples must be in ${contextType}
 3. Vietnamese meanings must be clear and accurate
 4. IPA must be correct
 5. All words must be relevant to the topic "${topic}"
@@ -103,7 +126,7 @@ Requirements:
 
   public async generateVocabularyForTopic(topic: string): Promise<TopicVocabularyResponse> {
     try {
-      console.log(`Bắt đầu tạo từ vựng cho chủ đề: ${topic}`);
+      console.log(`Bắt đầu tạo từ vựng ${this.englishStandard.toUpperCase()} cho chủ đề: ${topic}`);
       const prompt = this.generateTopicPrompt(topic);
       
       const response = await this.geminiService.generateContent(prompt);
@@ -153,7 +176,7 @@ Requirements:
         topic
       }));
 
-      console.log(`Đã tạo thành công ${vocabularyWithTopic.length} từ vựng`);
+      console.log(`Đã tạo thành công ${vocabularyWithTopic.length} từ vựng ${this.englishStandard.toUpperCase()}`);
       return {
         success: true,
         vocabularyList: vocabularyWithTopic

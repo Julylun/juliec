@@ -9,6 +9,8 @@ export type ThemeType =
 
 export type GeminiModelVersion = 'gemini-2.0-flash' | 'gemini-2.0-flash-lite' | 'gemini-2.0-pro-exp-02-05';
 
+export type EnglishStandardType = 'toeic' | 'ielts' | 'cefr';
+
 export interface CustomColors {
   primary: string;
   secondary: string;
@@ -22,6 +24,7 @@ export interface Settings {
   customColors?: CustomColors;
   geminiKey: string;
   geminiModel: GeminiModelVersion;
+  englishStandard: EnglishStandardType;
   profile?: {
     name: string;
     email: string;
@@ -31,5 +34,6 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'light',
   geminiKey: '',
-  geminiModel: 'gemini-2.0-flash'
+  geminiModel: 'gemini-2.0-flash',
+  englishStandard: 'toeic'
 }; 
