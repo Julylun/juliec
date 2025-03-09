@@ -6,12 +6,13 @@
 ![Tiêu chuẩn](https://img.shields.io/badge/IELTS-Beta-yellow)
 ![Tiêu chuẩn](https://img.shields.io/badge/CEFR-Beta-yellow)
 
-## 🆕 Cập nhật mới (v0.3)
+## 🆕 Cập nhật mới (v0.4)
 
 ### ✨ Tính năng mới
 - Hỗ trợ nhiều tiêu chuẩn tiếng Anh: TOEIC, IELTS (Beta), CEFR (Beta)
 - Tạo từ vựng tự động theo tiêu chuẩn tiếng Anh đã chọn
 - Tạo bài đọc và bài dịch phù hợp với tiêu chuẩn tiếng Anh đã chọn
+- Hỗ trợ Docker cho dễ dàng triển khai và phát triển
 
 ### 🔧 Cải thiện
 - Cải thiện chất lượng từ vựng được tạo tự động
@@ -52,8 +53,11 @@ Juliec là một ứng dụng web giúp người dùng học từ vựng tiếng
 - **Routing:** React Router
 - **Build Tool:** Vite
 - **Package Manager:** pnpm
+- **Deployment:** Docker, Nginx
 
 ## 📦 Cài đặt
+
+### Cài đặt thông thường
 
 1. Clone repository:
 ```bash
@@ -69,6 +73,48 @@ pnpm install
 3. Chạy ứng dụng ở môi trường development:
 ```bash
 pnpm dev
+```
+
+### Cài đặt với Docker
+
+#### Môi trường phát triển
+
+1. Chạy ứng dụng với Docker Compose:
+```bash
+docker-compose up juliec-dev
+```
+
+2. Truy cập ứng dụng tại: http://localhost:5173
+
+#### Môi trường production
+
+1. Chạy ứng dụng với Docker Compose:
+```bash
+docker-compose up juliec-prod
+```
+
+2. Truy cập ứng dụng tại: http://localhost:80
+
+#### Build và chạy Docker image riêng lẻ
+
+1. Build Docker image cho môi trường phát triển:
+```bash
+docker build --target development -t juliec-dev .
+```
+
+2. Chạy container từ image:
+```bash
+docker run -p 5173:5173 -v $(pwd):/app -v /app/node_modules juliec-dev
+```
+
+3. Build Docker image cho môi trường production:
+```bash
+docker build --target production -t juliec-prod .
+```
+
+4. Chạy container từ image:
+```bash
+docker run -p 80:80 juliec-prod
 ```
 
 ## 🔑 Cấu hình API Key

@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# Thư mục chứa dữ liệu Docker build
+**/docker-data/
+**/docker-cache/
+**/docker-volumes/
+
+docker-compose.override.yml
+**/*.log
+/tmp/
+.env
+.env.local
+.env.*.local
+volumes/
+db_data/

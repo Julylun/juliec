@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Môi trường phát triển
+  juliec-dev:
+    build:
+      context: .
+      target: development
+    container_name: juliec-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+    command: pnpm dev --host
+    restart: unless-stopped
+
+  # Môi trường production
+  juliec-prod:
+    build:
+      context: .
+      target: production
+    container_name: juliec-prod
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    # Bỏ comment dòng dưới nếu bạn muốn sử dụng volume để lưu trữ dữ liệu
+    # volumes:
+    #   - ./data:/data 

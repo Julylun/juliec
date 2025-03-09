@@ -1,0 +1,57 @@
+# Thư mục node_modules
+node_modules
+
+# Thư mục build
+dist
+build
+
+# Các file log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Các file môi trường
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Các thư mục và file hệ thống
+.DS_Store
+Thumbs.db
+
+# Các thư mục và file git
+.git
+.gitignore
+
+# Các file Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Các file cấu hình IDE
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Các file tạm thời
+*.log
+*.tmp
+*.temp
+
+# Các file test
+coverage
+.nyc_output
+__tests__
+__mocks__
+
+# Các file README và tài liệu
+README.md
+LICENSE
+*.md 
