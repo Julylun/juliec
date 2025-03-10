@@ -13,6 +13,18 @@ const Learn: React.FC = () => {
       description: 'Luyện tập đọc hiểu với các bài đọc TOEIC'
     },
     { 
+      title: 'Writing', 
+      path: '/learn/writing',
+      icon: '✍️',
+      description: 'Luyện tập viết với các chủ đề TOEIC'
+    },
+    { 
+      title: 'Listening', 
+      path: '/learn/listening',
+      icon: '🎧',
+      description: 'Luyện tập nghe với các bài nghe TOEIC'
+    },
+    { 
       title: 'Flash Card', 
       path: '/learn/flashcard',
       icon: '🔄',
