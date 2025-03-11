@@ -1,5 +1,7 @@
 # Juliec - English application for yourself
 
+![Lazy Project](https://img.shields.io/badge/Lazy_Project-purple)
+
 ![Phiên bản](https://img.shields.io/badge/Phiên_bản-0.4-blue)
 ![Cập nhật](https://img.shields.io/badge/Cập_nhật-15.03.2023-green)
 ![Tiêu chuẩn](https://img.shields.io/badge/TOEIC-Ổn_định-blue)
