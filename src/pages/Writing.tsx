@@ -2,17 +2,18 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLearning } from '../contexts/LearningContext';
-import { writingTopics, Topic } from '../data/writingTopics';
+import { writingTopics } from '../data/writingTopics';
+import { WritingTopic } from '../types/topics';
 
 const Writing: React.FC = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const { setSelectedTopic } = useLearning();
   const [searchQuery, setSearchQuery] = useState('');
-  const [localSelectedTopic, setLocalSelectedTopic] = useState<Topic | null>(null);
+  const [localSelectedTopic, setLocalSelectedTopic] = useState<WritingTopic | null>(null);
   const [showCustomTopicModal, setShowCustomTopicModal] = useState(false);
   const [customTopicTitle, setCustomTopicTitle] = useState('');
-  const [customTopicDifficulty, setCustomTopicDifficulty] = useState<Topic['difficulty']>('medium');
+  const [customTopicDifficulty, setCustomTopicDifficulty] = useState<WritingTopic['difficulty']>('medium');
 
   // Filter topics based on search query
   const filteredTopics = useMemo(() => {

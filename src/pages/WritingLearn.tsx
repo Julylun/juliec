@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLearning } from '../contexts/LearningContext';
 import { GeminiService } from '../services/geminiService';
-import { writingTopics, Topic } from '../data/writingTopics';
+import { writingTopics } from '../data/writingTopics';
+import { WritingTopic } from '../types/topics';
 import { WritingPrompt, WritingFeedback, getPromptGeneratorByTopic, getEvaluationPromptByTopic } from '../data/writingPrompts';
 import Arrow from '../components/icons/Arrow';
 import { createPortal } from 'react-dom';
@@ -13,7 +14,7 @@ const WritingLearn: React.FC = () => {
   const { topicId } = useParams<{ topicId: string }>();
   const { settings } = useSettings();
   const { selectedTopic, setSelectedTopic } = useLearning();
-  const [topic, setTopic] = useState<Topic | null>(null);
+  const [topic, setTopic] = useState<WritingTopic | null>(null);
   const [writingPrompt, setWritingPrompt] = useState<WritingPrompt | null>(null);
   const [userEssay, setUserEssay] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);

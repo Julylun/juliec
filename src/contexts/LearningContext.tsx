@@ -1,9 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Topic as ReadingTopic } from '../data/readingTopics';
-import { Topic as TranslateTopic } from '../data/translateTopics';
-
-// Tạo union type để hỗ trợ cả hai loại Topic
-export type TopicUnion = ReadingTopic | TranslateTopic;
+import { TopicUnion } from '../types/topics';
 
 interface LearningState {
   selectedTopic: TopicUnion | null;

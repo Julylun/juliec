@@ -2,17 +2,18 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLearning } from '../contexts/LearningContext';
-import { readingTopics, Topic } from '../data/readingTopics';
+import { readingTopics } from '../data/readingTopics';
+import { ReadingTopic } from '../types/topics';
 
 const Reading: React.FC = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const { setSelectedTopic } = useLearning();
   const [searchQuery, setSearchQuery] = useState('');
-  const [localSelectedTopic, setLocalSelectedTopic] = useState<Topic | null>(null);
+  const [localSelectedTopic, setLocalSelectedTopic] = useState<ReadingTopic | null>(null);
   const [showCustomTopicModal, setShowCustomTopicModal] = useState(false);
   const [customTopicTitle, setCustomTopicTitle] = useState('');
-  const [customTopicDifficulty, setCustomTopicDifficulty] = useState<Topic['difficulty']>('medium');
+  const [customTopicDifficulty, setCustomTopicDifficulty] = useState<ReadingTopic['difficulty']>('medium');
 
   console.log("Reading page rendering");
 
@@ -41,7 +42,7 @@ const Reading: React.FC = () => {
   const handleCreateCustomTopic = () => {
     if (!customTopicTitle.trim()) return;
 
-    const customTopic: Topic = {
+    const customTopic: ReadingTopic = {
       id: `custom-${Date.now()}`,
       title: customTopicTitle,
       description: 'Custom topic created by user',
@@ -55,7 +56,7 @@ const Reading: React.FC = () => {
     navigate(`/learn/reading/${customTopic.id}`);
   };
 
-  const getDifficultyColor = (difficulty: Topic['difficulty']) => {
+  const getDifficultyColor = (difficulty: ReadingTopic['difficulty']) => {
     switch (difficulty) {
       case 'easy':
         return 'text-green-500';
@@ -166,7 +167,7 @@ const Reading: React.FC = () => {
                   </label>
                   <select
                     value={customTopicDifficulty}
-                    onChange={(e) => setCustomTopicDifficulty(e.target.value as Topic['difficulty'])}
+                    onChange={(e) => setCustomTopicDifficulty(e.target.value as ReadingTopic['difficulty'])}
                     className="w-full p-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
                   >
                     <option value="easy">Dễ</option>

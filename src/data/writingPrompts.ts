@@ -1,4 +1,4 @@
-import { Topic } from './writingTopics';
+import { WritingTopic } from '../types/topics';
 
 interface WritingPrompt {
   content: string;
@@ -21,7 +21,7 @@ interface WritingFeedback {
   corrections: Correction[];
 }
 
-export const getPromptGeneratorByTopic = (topic: Topic, englishStandard: string) => {
+export const getPromptGeneratorByTopic = (topic: WritingTopic, englishStandard: string) => {
   const basePrompt = `
 You are a professional ${englishStandard.toUpperCase()} writing examiner. Generate a writing task that follows the exact format of ${englishStandard.toUpperCase()} writing tests.
 The task should be suitable for ${topic.difficulty} level students.
@@ -85,7 +85,7 @@ Example format:
   }
 };
 
-export const getEvaluationPromptByTopic = (topic: Topic, essay: string, englishStandard: string) => {
+export const getEvaluationPromptByTopic = (topic: WritingTopic, essay: string, englishStandard: string) => {
   const basePrompt = `
 You are a professional ${englishStandard.toUpperCase()} writing examiner. Evaluate the following ${topic.title.toLowerCase()} based on ${englishStandard.toUpperCase()} standards.
 

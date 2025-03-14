@@ -6,7 +6,8 @@ import { useVocabulary } from '../contexts/VocabularyContext';
 import { GeminiService } from '../services/geminiService';
 import { generateTranslatePrompt, generateFeedbackPrompt, TranslateText, TranslationFeedback } from '../data/translatePrompt';
 import { generateVocabularyPrompt, VocabularyInfo } from '../data/vocabularyPrompt';
-import { translateTopics, Topic } from '../data/translateTopics';
+import { translateTopics } from '../data/translateTopics';
+import { TranslateTopic } from '../types/topics';
 import VocabularyPopup from '../components/VocabularyPopup';
 import SelectionPopup from '../components/SelectionPopup';
 import SpeakButton from '../components/SpeakButton';
@@ -36,7 +37,7 @@ const TranslateLearn: React.FC = () => {
   const [translateText, setTranslateText] = useState<TranslateText | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [topic, setTopic] = useState<Topic | null>(null);
+  const [topic, setTopic] = useState<TranslateTopic | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   
   // State cho bản dịch của người dùng
@@ -63,7 +64,7 @@ const TranslateLearn: React.FC = () => {
     if (topicId && !isInitialized) {
       // Đầu tiên kiểm tra trong context
       if (selectedTopic?.id === topicId) {
-        setTopic(selectedTopic as Topic);
+        setTopic(selectedTopic as TranslateTopic);
         setIsInitialized(true);
         return;
       }

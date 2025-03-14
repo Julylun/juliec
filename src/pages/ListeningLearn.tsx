@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLearning } from '../contexts/LearningContext';
-import { listeningTopics, Topic } from '../data/listeningTopics';
+import { listeningTopics } from '../data/listeningTopics';
+import { ListeningTopic } from '../types/topics';
 import Arrow from '../components/icons/Arrow';
 
 interface Question {
@@ -23,7 +24,7 @@ const ListeningLearn: React.FC = () => {
   const { topicId } = useParams<{ topicId: string }>();
   const { settings } = useSettings();
   const { selectedTopic, setSelectedTopic } = useLearning();
-  const [topic, setTopic] = useState<Topic | null>(null);
+  const [topic, setTopic] = useState<ListeningTopic | null>(null);
   const [exercise, setExercise] = useState<ListeningExercise | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<{[key: number]: number}>({});
   const [isPlaying, setIsPlaying] = useState(false);

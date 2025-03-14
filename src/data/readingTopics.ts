@@ -1,12 +1,6 @@
-export interface Topic {
-  id: string;
-  title: string;
-  description: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  questionsCount: number;
-}
+import { ReadingTopic } from '../types/topics';
 
-export const readingTopics: Topic[] = [
+export const readingTopics: ReadingTopic[] = [
   {
     id: 'random',
     title: 'Random Topics',

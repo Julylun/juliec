@@ -5,10 +5,11 @@ import { useLearning } from '../contexts/LearningContext';
 import { GeminiService } from '../services/geminiService';
 import { generateReadingPrompt, ReadingTest } from '../data/readingPrompt';
 import { generateVocabularyPrompt, VocabularyInfo } from '../data/vocabularyPrompt';
-import { readingTopics, Topic } from '../data/readingTopics';
+import { readingTopics } from '../data/readingTopics';
 import VocabularyPopup from '../components/VocabularyPopup';
 import SelectionPopup from '../components/SelectionPopup';
 import Arrow from '../components/icons/Arrow';
+import { ReadingTopic } from '../types/topics';
 
 interface HighlightInfo {
   id: string;
@@ -35,7 +36,7 @@ const ReadingLearn: React.FC = () => {
   const [readingTest, setReadingTest] = useState<ReadingTest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [topic, setTopic] = useState<Topic | null>(null);
+  const [topic, setTopic] = useState<ReadingTopic | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [userScore, setUserScore] = useState(0);
@@ -67,9 +68,12 @@ const ReadingLearn: React.FC = () => {
     if (topicId && !isInitialized) {
       // Đầu tiên kiểm tra trong context
       if (selectedTopic?.id === topicId) {
-        setTopic(selectedTopic);
-        setIsInitialized(true);
-        return;
+        // Kiểm tra xem selectedTopic có phải là ReadingTopic không
+        if ('questionsCount' in selectedTopic) {
+          setTopic(selectedTopic as ReadingTopic);
+          setIsInitialized(true);
+          return;
+        }
       }
 
       // Nếu không có trong context, tìm trong danh sách có sẵn

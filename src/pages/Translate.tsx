@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLearning } from '../contexts/LearningContext';
-import { translateTopics, Topic } from '../data/translateTopics';
+import { translateTopics } from '../data/translateTopics';
+import { TranslateTopic } from '../types/topics';
 import { GeminiService } from '../services/geminiService';
 
 const Translate: React.FC = () => {
@@ -10,10 +11,10 @@ const Translate: React.FC = () => {
   const { settings } = useSettings();
   const { setSelectedTopic } = useLearning();
   const [searchQuery, setSearchQuery] = useState('');
-  const [localSelectedTopic, setLocalSelectedTopic] = useState<Topic | null>(null);
+  const [localSelectedTopic, setLocalSelectedTopic] = useState<TranslateTopic | null>(null);
   const [showCustomTopicModal, setShowCustomTopicModal] = useState(false);
   const [customTopicTitle, setCustomTopicTitle] = useState('');
-  const [customTopicDifficulty, setCustomTopicDifficulty] = useState<Topic['difficulty']>('medium');
+  const [customTopicDifficulty, setCustomTopicDifficulty] = useState<TranslateTopic['difficulty']>('medium');
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
   const [translateDirection, setTranslateDirection] = useState<'en-vi' | 'vi-en'>('en-vi');
@@ -47,11 +48,14 @@ const Translate: React.FC = () => {
   const handleCreateCustomTopic = () => {
     if (!customTopicTitle.trim()) return;
 
-    const customTopic: Topic = {
+    const customTopic: TranslateTopic = {
       id: `custom-${Date.now()}`,
       title: customTopicTitle,
-      description: 'Custom topic created by user',
-      difficulty: customTopicDifficulty
+      description: 'Custom translation topic created by user',
+      difficulty: customTopicDifficulty,
+      sourceLanguage: 'en',
+      targetLanguage: 'vi',
+      category: 'custom'
     };
 
     setLocalSelectedTopic(customTopic);
@@ -60,7 +64,7 @@ const Translate: React.FC = () => {
     navigate(`/learn/translate/${customTopic.id}`);
   };
 
-  const getDifficultyColor = (difficulty: Topic['difficulty']) => {
+  const getDifficultyColor = (difficulty: TranslateTopic['difficulty']) => {
     switch (difficulty) {
       case 'easy':
         return 'text-green-500';
@@ -215,7 +219,7 @@ Provide only the translation without any additional comments or explanations.`;
                   </label>
                   <select
                     value={customTopicDifficulty}
-                    onChange={(e) => setCustomTopicDifficulty(e.target.value as Topic['difficulty'])}
+                    onChange={(e) => setCustomTopicDifficulty(e.target.value as TranslateTopic['difficulty'])}
                     className="w-full p-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
                   >
                     <option value="easy">Dễ</option>
