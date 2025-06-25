@@ -773,4 +773,37 @@ export class GeminiService {
     
     return feedback;
   }
+
+  /**
+   * Kiểm tra API key có hợp lệ không bằng cách gọi một request đơn giản tới Gemini API
+   * Trả về true nếu thành công, false nếu lỗi xác thực hoặc quota
+   */
+  static async testApiKey(apiKey: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Sử dụng model nhẹ nhất để kiểm tra
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      // Gửi prompt đơn giản
+      const result = await model.generateContent('Say hello');
+      const response = await result.response;
+      const text = await response.text();
+      if (typeof text === 'string' && text.length > 0) {
+        return { success: true, message: 'API key hợp lệ và hoạt động.' };
+      } else {
+        return { success: false, message: 'API key không trả về kết quả.' };
+      }
+    } catch (error: any) {
+      // Xử lý lỗi xác thực/quota
+      if (error && error.message) {
+        if (error.message.includes('API key not valid') || error.message.includes('invalid api key')) {
+          return { success: false, message: 'API key không hợp lệ.' };
+        }
+        if (error.message.includes('quota') || error.message.includes('exceeded')) {
+          return { success: false, message: 'API key đã hết quota hoặc bị giới hạn.' };
+        }
+        return { success: false, message: error.message };
+      }
+      return { success: false, message: 'Lỗi không xác định khi kiểm tra API key.' };
+    }
+  }
 } 

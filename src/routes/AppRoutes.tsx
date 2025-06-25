@@ -17,6 +17,8 @@ import Translate from "../pages/Translate";
 import TranslateLearn from "../pages/TranslateLearn";
 import Changelog from "../pages/Changelog";
 import PageTransition from "../components/PageTransition";
+import Anki from '../pages/Anki';
+import AnkiWTC from '../pages/AnkiWTC';
 
 const AppRoutes: React.FC = () => {
   const location = useLocation();
@@ -39,6 +41,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/setting" element={<PageTransition><Setting /></PageTransition>} />
         <Route path="/about" element={<PageTransition><About /></PageTransition>} />
         <Route path="/changelog" element={<PageTransition><Changelog /></PageTransition>} />
+        <Route path="/anki" element={<PageTransition><Anki /></PageTransition>} />
+        <Route path="/anki/wtc" element={<PageTransition><AnkiWTC /></PageTransition>} />
       </Routes>
     </AnimatePresence>
   );
