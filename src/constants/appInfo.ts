@@ -1,11 +1,29 @@
 // Thông tin phiên bản ứng dụng
-export const APP_VERSION = '0.4';
+export const APP_VERSION = '0.5';
 
 // Ngày phát hành phiên bản hiện tại
-export const RELEASE_DATE = '2024-03-20';
+export const RELEASE_DATE = '2024-06-09';
 
 // Lịch sử các phiên bản
 export const VERSION_HISTORY = [
+  {
+    version: 'Beta 0.5',
+    releaseDate: '2024-06-09',
+    updates: [
+      {
+        title: 'Beta',
+        items: [
+          'Tách UI trang AnkiWTC thành các components nhỏ, tối ưu code, dễ bảo trì.',
+          'Lưu và khôi phục ghi chú (note) và bảng định dạng (table 2) vào localStorage.',
+          'Thêm chức năng xuất/nhập dữ liệu note + table 2 qua file JSON.',
+          'Thêm phím tắt cho FlashCard: a (trước), d (tiếp), s/space (lật thẻ).',
+          'Tối ưu hóa giao diện và trải nghiệm người dùng cho các trang luyện từ vựng.',
+          'Sửa lỗi đồng bộ dữ liệu bảng 2 khi import/export.',
+          'Cải thiện khả năng mở rộng và tái sử dụng UI.'
+        ]
+      }
+    ]
+  },
   {
     version: '0.4',
     releaseDate: '2024-03-20',

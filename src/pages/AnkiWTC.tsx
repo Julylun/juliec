@@ -135,14 +135,15 @@ const AnkiWTC: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-primary)] p-4 relative">
       <BackButton onClick={() => navigate(-1)} />
       <Title title="Word To CSV" description="Chuyển đổi danh sách từ vựng sang file CSV cho Anki." />
-      <ExportImportButtons onExport={handleExportJSON} onImport={handleImportJSON} />
-      <NoteArea note={note} setNote={setNote} loading={loading} />
+
       <DynamicTable ref={table1Ref} options={{ loading }} />
       <DynamicTable
         key={table2Key}
         ref={table2Ref}
         options={{ disableAddRow: true, singleRowOnly: true, loading, initialData: table2Data, onChange: setTable2Data }}
       />
+      <NoteArea note={note} setNote={setNote} loading={loading} />
+      <ExportImportButtons onExport={handleExportJSON} onImport={handleImportJSON} />
       <button
         onClick={handleConvert}
         className="mt-4 px-8 py-3 rounded-lg bg-[var(--button-success-bg)] text-[var(--button-text)] font-semibold text-lg hover:bg-[var(--button-success-bg-hover)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"

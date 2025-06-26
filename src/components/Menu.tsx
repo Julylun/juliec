@@ -46,7 +46,7 @@ const Menu: React.FC = () => {
       <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 md:p-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-2 text-[var(--text-primary)]">JULIEC</h1>
-          <p className="text-[var(--text-secondary)]">Toeic for yourself</p>
+          <p className="text-[var(--text-secondary)]">Languages for yourself</p>
         </div>
         
         <nav className="w-full max-w-md mx-auto space-y-4">

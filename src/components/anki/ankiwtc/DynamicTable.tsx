@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import CircleButton from './CircleButton';
 
 const DEFAULT_COLS = ['Column 1'];
 const DEFAULT_ROWS = [['']];
@@ -85,9 +86,9 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
     <div className="overflow-x-auto w-full max-w-3xl mb-8">
       <table className="min-w-full border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-lg">
         <thead>
-          <tr>
+          <tr className="h-full flex justify-center items-center flex-row">
             {table.columns.map((col, idx) => (
-              <th key={idx} className="p-2 border-b border-[var(--border-color)] relative group">
+              <th key={idx} className="p-2 border-b border-[var(--border-color)] relative group h-full flex justify-center items-center flex-row">
                 <input
                   ref={el => { table.inputRefs.current[idx] = el; }}
                   className="font-semibold text-center bg-transparent border-b border-dashed border-[var(--border-color)] focus:outline-none focus:border-blue-500"
@@ -97,7 +98,7 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
                 {table.columns.length > 1 && !props.options?.disableAddRow && idx > 0 && (
                   <button
                     onClick={() => table.deleteColumn(idx)}
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs opacity-80 hover:opacity-100 z-10"
+                    className="w-3 h-3 rounded-full bg-red-500 text-white flex items-center justify-center text-xs opacity-30 hover:opacity-100 hover:cursor-pointer z-10"
                     title="Xóa cột"
                     tabIndex={-1}
                   >
@@ -106,14 +107,8 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
                 )}
               </th>
             ))}
-            <th className="p-2">
-              <button
-                onClick={table.addColumn}
-                className="w-8 h-8 rounded-full bg-[var(--button-bg)] text-[var(--button-text)] flex items-center justify-center hover:bg-[var(--button-bg-hover)]"
-                title="Thêm cột"
-              >
-                +
-              </button>
+            <th className="p-2 flex items-center justify-center h-full">
+              <CircleButton title="Xóa cột" icon="+" _function={() => { table.addColumn()}}/>
             </th>
           </tr>
         </thead>
@@ -133,18 +128,12 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
             </tr>
           ))}
         </tbody>
-      </table>
-      {!table.disableAddRow && !table.singleRowOnly && (
+        {!table.disableAddRow && !table.singleRowOnly && (
         <div className="flex justify-center mt-2">
-          <button
-            onClick={table.addRow}
-            className="w-8 h-8 rounded-full bg-[var(--button-bg)] text-[var(--button-text)] flex items-center justify-center hover:bg-[var(--button-bg-hover)]"
-            title="Thêm dòng"
-          >
-            +
-          </button>
+          <CircleButton title="Thêm dòng" icon="+" _function={() => { table.addRow()}}/>
         </div>
       )}
+      </table>
     </div>
   );
 });
