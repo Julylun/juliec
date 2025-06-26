@@ -1,5 +1,5 @@
 // Thông tin phiên bản ứng dụng
-export const APP_VERSION = '0.5';
+export const APP_VERSION = 'Beta 0.5';
 
 // Ngày phát hành phiên bản hiện tại
 export const RELEASE_DATE = '2024-06-09';
@@ -11,7 +11,7 @@ export const VERSION_HISTORY = [
     releaseDate: '2024-06-09',
     updates: [
       {
-        title: 'Beta',
+        title: 'Cải thiện',
         items: [
           'Tách UI trang AnkiWTC thành các components nhỏ, tối ưu code, dễ bảo trì.',
           'Lưu và khôi phục ghi chú (note) và bảng định dạng (table 2) vào localStorage.',

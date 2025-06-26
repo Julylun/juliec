@@ -18,40 +18,41 @@ const useDynamicTable = (options?: { disableAddRow?: boolean; singleRowOnly?: bo
     // eslint-disable-next-line
   }, [options?.initialData]);
 
-  // Always call onChange when columns/rows change
-  React.useEffect(() => {
-    if (options?.onChange) options.onChange({ columns, rows });
-    // eslint-disable-next-line
-  }, [columns, rows]);
-
   const addColumn = () => {
     const newColName = `Column ${columns.length + 1}`;
-    setColumns(prev => {
-      setTimeout(() => {
-        inputRefs.current[prev.length]?.focus();
-        inputRefs.current[prev.length]?.select();
-      }, 0);
-      return [...prev, newColName];
-    });
-    setRows(rows.map(row => [...row, '']));
+    const newColumns = [...columns, newColName];
+    const newRows = rows.map(row => [...row, '']);
+    setColumns(newColumns);
+    setRows(newRows);
+    if (options?.onChange) options.onChange({ columns: newColumns, rows: newRows });
+    setTimeout(() => {
+      inputRefs.current[newColumns.length - 1]?.focus();
+      inputRefs.current[newColumns.length - 1]?.select();
+    }, 0);
   };
 
   const deleteColumn = (colIdx: number) => {
     if (columns.length <= 1) return;
-    setColumns(columns.filter((_, idx) => idx !== colIdx));
-    setRows(rows.map(row => row.filter((_, idx) => idx !== colIdx)));
+    const newColumns = columns.filter((_, idx) => idx !== colIdx);
+    const newRows = rows.map(row => row.filter((_, idx) => idx !== colIdx));
+    setColumns(newColumns);
+    setRows(newRows);
+    if (options?.onChange) options.onChange({ columns: newColumns, rows: newRows });
   };
 
   const addRow = () => {
     if (options?.disableAddRow) return;
     if (options?.singleRowOnly && rows.length >= 1) return;
-    setRows([...rows, Array(columns.length).fill('')]);
+    const newRows = [...rows, Array(columns.length).fill('')];
+    setRows(newRows);
+    if (options?.onChange) options.onChange({ columns, rows: newRows });
   };
 
   const handleColumnNameChange = (idx: number, value: string) => {
     const newCols = [...columns];
     newCols[idx] = value;
     setColumns(newCols);
+    if (options?.onChange) options.onChange({ columns: newCols, rows });
   };
 
   const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
@@ -59,6 +60,7 @@ const useDynamicTable = (options?: { disableAddRow?: boolean; singleRowOnly?: bo
       r === rowIdx ? row.map((cell, c) => (c === colIdx ? value : cell)) : row
     );
     setRows(newRows);
+    if (options?.onChange) options.onChange({ columns, rows: newRows });
   };
 
   const getData = () => ({ columns, rows });
@@ -114,7 +116,7 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
         </thead>
         <tbody>
           {table.rows.map((row, rowIdx) => (
-            <tr key={rowIdx}>
+            <tr className='h-full flex justify-center items-center flex-row' key={rowIdx}>
               {row.map((cell, colIdx) => (
                 <td key={colIdx} className="p-2 border-b border-[var(--border-color)]">
                   <input
@@ -131,6 +133,7 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
         {!table.disableAddRow && !table.singleRowOnly && (
         <div className="flex justify-center mt-2">
           <CircleButton title="Thêm dòng" icon="+" _function={() => { table.addRow()}}/>
+        
         </div>
       )}
       </table>

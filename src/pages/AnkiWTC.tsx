@@ -98,7 +98,7 @@ const AnkiWTC: React.FC = () => {
     const csv1 = toTabCSV(data1.columns, data1.rows);
     const csv2 = toTabCSV(data2.columns, data2.rows); // bảng 2 có 1 record ý nghĩa
     // Prompt theo yêu cầu
-    const prompt = `Bây giờ tôi sẽ gửi cho bạn một danh sách từ vựng tiếng Anh trong <provide> dưới dạng csv trong đó hàng đầu là tên các cột từ vựng được cung cấp và các hàng khác là từ vựng hay dữ liệu liên quan, nhiệm vụ của bạn là:\n- Dựa vào từ vựng được cung cấp trong dấu tạo ra một đoạn mã CSV với các cột được đặt trong thẻ <form> dưới dạng csv trong đó hàng đầu là tên cột, hàng hai là ý nghĩa của các cột, kí hiệu của csv là tab.\n- Nếu có note trong thẻ <note> thì phải tuân thủ hoàn toàn note đó khi tạo dữ liệu.\n- Lưu ý:\n + Đảm bảo không đưa ra bất kỳ thông tin nào ngoài đoạn mã CSV.\n + Các ô trong CSV phải cách nhau bằng dấu ~.\n\n<provide>\n${csv1}\n</provide>\n<form>\n${csv2}\n</form>${note ? `\n<note>\n${note}\n</note>` : ''}`;
+    const prompt = `Bây giờ tôi sẽ gửi cho bạn một danh sách từ vựng tiếng Anh trong <provide> dưới dạng csv trong đó hàng đầu là tên các cột từ vựng được cung cấp và các hàng khác là từ vựng hay dữ liệu liên quan, nhiệm vụ của bạn là:\n- Dựa vào từ vựng được cung cấp trong dấu tạo ra một đoạn mã CSV với các cột được đặt trong thẻ <form> dưới dạng csv trong đó hàng đầu là tên cột, hàng hai là ý nghĩa của các cột, kí hiệu của csv là tab (nội dung csv không chứa hàng ý nghĩa).\n- Nếu có note trong thẻ <note> thì phải tuân thủ hoàn toàn note đó khi tạo dữ liệu.\n- Lưu ý:\n + Đảm bảo không đưa ra bất kỳ thông tin nào ngoài đoạn mã CSV.\n + Các ô trong CSV phải cách nhau bằng dấu ~.\n\n<provide>\n${csv1}\n</provide>\n<form>\n${csv2}\n</form>${note ? `\n<note>\n${note}\n</note>` : ''}`;
     try {
       const gemini = new GeminiService(settings.geminiKey, settings.geminiModel);
       const result = await gemini.generateContent(prompt);
@@ -134,7 +134,7 @@ const AnkiWTC: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-primary)] p-4 relative">
       <BackButton onClick={() => navigate(-1)} />
-      <Title title="Word To CSV" description="Chuyển đổi danh sách từ vựng sang file CSV cho Anki." />
+      <Title title="Anki Generator (Testing)" description="Nhập từ vựng vào bảng đầu tiên, tạo form anki ở bảng thứ hai" />
 
       <DynamicTable ref={table1Ref} options={{ loading }} />
       <DynamicTable
@@ -152,7 +152,7 @@ const AnkiWTC: React.FC = () => {
         {loading && (
           <span className="w-5 h-5 border-2 border-[var(--button-bg)] border-t-transparent rounded-full animate-spin inline-block"></span>
         )}
-        {loading ? 'Đang chuyển đổi...' : 'Convert'}
+        {loading ? 'Đang chuyển đổi...' : 'Hô biến'}
       </button>
       {csvResult && (
         <button
@@ -160,7 +160,7 @@ const AnkiWTC: React.FC = () => {
           className="mt-4 px-8 py-3 rounded-lg bg-[var(--button-accent-bg)] text-[var(--button-text)] font-semibold text-lg hover:bg-[var(--button-accent-bg-hover)] transition-colors"
           disabled={loading}
         >
-          Download CSV
+          Tải về file CSV
         </button>
       )}
     </div>
