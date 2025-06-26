@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { GeminiService } from '../services/geminiService';
+import Arrow from '../components/icons/Arrow';
+import { useNavigate } from 'react-router-dom';
 
 const DEFAULT_COLS = ['Column 1'];
 const DEFAULT_ROWS = [['']];
@@ -8,11 +10,25 @@ const DEFAULT_ROWS = [['']];
 const useDynamicTable = (options?: { disableAddRow?: boolean; singleRowOnly?: boolean }) => {
   const [columns, setColumns] = useState<string[]>([...DEFAULT_COLS]);
   const [rows, setRows] = useState<string[][]>([...DEFAULT_ROWS]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const addColumn = () => {
     const newColName = `Column ${columns.length + 1}`;
-    setColumns([...columns, newColName]);
+    setColumns(prev => {
+      setTimeout(() => {
+        // Focus và select input của cột mới
+        inputRefs.current[prev.length]?.focus();
+        inputRefs.current[prev.length]?.select();
+      }, 0);
+      return [...prev, newColName];
+    });
     setRows(rows.map(row => [...row, '']));
+  };
+
+  const deleteColumn = (colIdx: number) => {
+    if (columns.length <= 1) return;
+    setColumns(columns.filter((_, idx) => idx !== colIdx));
+    setRows(rows.map(row => row.filter((_, idx) => idx !== colIdx)));
   };
 
   const addRow = () => {
@@ -41,10 +57,12 @@ const useDynamicTable = (options?: { disableAddRow?: boolean; singleRowOnly?: bo
     columns,
     rows,
     addColumn,
+    deleteColumn,
     addRow,
     handleColumnNameChange,
     handleCellChange,
     getData,
+    inputRefs,
     disableAddRow: !!options?.disableAddRow,
     singleRowOnly: !!options?.singleRowOnly,
   };
@@ -66,18 +84,29 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
         <thead>
           <tr>
             {table.columns.map((col, idx) => (
-              <th key={idx} className="p-2 border-b border-[var(--border-color)]">
+              <th key={idx} className="p-2 border-b border-[var(--border-color)] relative group">
                 <input
+                  ref={el => { table.inputRefs.current[idx] = el; }}
                   className="font-semibold text-center bg-transparent border-b border-dashed border-[var(--border-color)] focus:outline-none focus:border-blue-500"
                   value={col}
                   onChange={e => table.handleColumnNameChange(idx, e.target.value)}
                 />
+                {table.columns.length > 1 && !props.options?.disableAddRow && idx > 0 && (
+                  <button
+                    onClick={() => table.deleteColumn(idx)}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs opacity-80 hover:opacity-100 z-10"
+                    title="Xóa cột"
+                    tabIndex={-1}
+                  >
+                    ×
+                  </button>
+                )}
               </th>
             ))}
             <th className="p-2">
               <button
                 onClick={table.addColumn}
-                className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600"
+                className="w-8 h-8 rounded-full bg-[var(--button-bg)] text-[var(--button-text)] flex items-center justify-center hover:bg-[var(--button-bg-hover)]"
                 title="Thêm cột"
               >
                 +
@@ -106,7 +135,7 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
         <div className="flex justify-center mt-2">
           <button
             onClick={table.addRow}
-            className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600"
+            className="w-8 h-8 rounded-full bg-[var(--button-bg)] text-[var(--button-text)] flex items-center justify-center hover:bg-[var(--button-bg-hover)]"
             title="Thêm dòng"
           >
             +
@@ -123,8 +152,11 @@ const AnkiWTC: React.FC = () => {
   const { settings } = useSettings();
   const [csvResult, setCsvResult] = useState<string | null>(null);
   const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleConvert = async () => {
+    setLoading(true);
     const data1 = table1Ref.current?.getData();
     const data2 = table2Ref.current?.getData();
     const csv1 = toTabCSV(data1.columns, data1.rows);
@@ -147,6 +179,8 @@ const AnkiWTC: React.FC = () => {
     } catch (e) {
       setCsvResult(null);
       console.error('Gemini error:', e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -164,7 +198,15 @@ const AnkiWTC: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-primary)] p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-primary)] p-4 relative">
+      {/* Nút back */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-4 left-4 z-40 p-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-[var(--text-secondary)] transition-colors shadow-lg"
+        aria-label="Quay lại"
+      >
+        <Arrow className="w-6 h-6" />
+      </button>
       <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-4">Word To CSV</h1>
       <p className="text-lg text-[var(--text-secondary)] text-center max-w-xl mb-8">
         Chuyển đổi danh sách từ vựng sang file CSV cho Anki.
@@ -175,19 +217,25 @@ const AnkiWTC: React.FC = () => {
         placeholder="Ghi chú cho LLM (nếu có)..."
         value={note}
         onChange={e => setNote(e.target.value)}
+        disabled={loading}
       />
-      <DynamicTable ref={table1Ref} />
-      <DynamicTable ref={table2Ref} options={{ disableAddRow: true, singleRowOnly: true }} />
+      <DynamicTable ref={table1Ref} options={{ loading }} />
+      <DynamicTable ref={table2Ref} options={{ disableAddRow: true, singleRowOnly: true, loading }} />
       <button
         onClick={handleConvert}
-        className="mt-4 px-8 py-3 rounded-lg bg-green-500 text-white font-semibold text-lg hover:bg-green-600 transition-colors"
+        className="mt-4 px-8 py-3 rounded-lg bg-[var(--button-success-bg)] text-[var(--button-text)] font-semibold text-lg hover:bg-[var(--button-success-bg-hover)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+        disabled={loading}
       >
-        Convert
+        {loading && (
+          <span className="w-5 h-5 border-2 border-[var(--button-bg)] border-t-transparent rounded-full animate-spin inline-block"></span>
+        )}
+        {loading ? 'Đang chuyển đổi...' : 'Convert'}
       </button>
       {csvResult && (
         <button
           onClick={handleDownload}
-          className="mt-4 px-8 py-3 rounded-lg bg-blue-500 text-white font-semibold text-lg hover:bg-blue-600 transition-colors"
+          className="mt-4 px-8 py-3 rounded-lg bg-[var(--button-accent-bg)] text-[var(--button-text)] font-semibold text-lg hover:bg-[var(--button-accent-bg-hover)] transition-colors"
+          disabled={loading}
         >
           Download CSV
         </button>
