@@ -88,6 +88,37 @@ const FlashCard: React.FC = () => {
     e.stopPropagation();
   };
 
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (
+        e.key === 'a' ||
+        e.key === 'A' ||
+        e.key === 'ArrowLeft'
+      ) {
+        handlePrevious();
+        e.preventDefault();
+      } else if (
+        e.key === 'd' ||
+        e.key === 'D' ||
+        e.key === 'ArrowRight'
+      ) {
+        handleNext();
+        e.preventDefault();
+      } else if (
+        e.key === 'Spacebar' || // for older browsers
+        e.key === 's' ||
+        e.key === 'S'
+      ) {
+        handleFlip();
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, filteredVocabulary.length]);
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-[var(--bg-primary)] p-4 md:p-8">
       <div className="text-center mb-4">
@@ -173,7 +204,7 @@ const FlashCard: React.FC = () => {
                   {filteredVocabulary[currentIndex].ipa}
                 </p>
                 <div className="mt-4 text-sm text-[var(--text-secondary)]">
-                  Bấm để xem nghĩa
+                  Bấm để xem nghĩa (s | space)
                 </div>
                 {/* Show collections on front */}
                 {filteredVocabulary[currentIndex].collections.length > 0 && (
@@ -229,7 +260,7 @@ const FlashCard: React.FC = () => {
                   : 'bg-blue-500 text-white hover:bg-blue-600'
               }`}
             >
-              Trước
+              Trước (a)
             </button>
             <button
               onClick={handleRemove}
@@ -246,7 +277,7 @@ const FlashCard: React.FC = () => {
                   : 'bg-blue-500 text-white hover:bg-blue-600'
               }`}
             >
-              Tiếp
+              Tiếp (d)
             </button>
           </div>
 

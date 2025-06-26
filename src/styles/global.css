@@ -9,6 +9,14 @@
   --text-hover: #1a1a1a;
   --bg-secondary: #f3f4f6;
   --border-color: #e5e7eb;
+  /* Button theme variables */
+  --button-bg: #3b82f6; /* blue-500 */
+  --button-bg-hover: #2563eb; /* blue-600 */
+  --button-text: #fff;
+  --button-success-bg: #22c55e; /* green-500 */
+  --button-success-bg-hover: #16a34a; /* green-600 */
+  --button-accent-bg: #10b981; /* emerald-500 */
+  --button-accent-bg-hover: #059669; /* emerald-600 */
 }
 
 :root[class='dark'] {
@@ -18,6 +26,14 @@
   --text-hover: #ffffff;
   --bg-secondary: #2d2d2d;
   --border-color: #404040;
+  /* Button theme variables for dark */
+  --button-bg: #2563eb; /* blue-600 */
+  --button-bg-hover: #1d4ed8; /* blue-700 */
+  --button-text: #fff;
+  --button-success-bg: #16a34a; /* green-600 */
+  --button-success-bg-hover: #15803d; /* green-700 */
+  --button-accent-bg: #059669; /* emerald-600 */
+  --button-accent-bg-hover: #047857; /* emerald-700 */
 }
 
 body {

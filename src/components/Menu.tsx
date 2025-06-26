@@ -14,6 +14,12 @@ const Menu: React.FC = () => {
       description: 'Luyện tập TOEIC với các bài đọc và flashcard'
     },
     { 
+      title: 'Anki Agent', 
+      path: '/anki',
+      icon: '👨',
+      description: 'Quản lý và hỗ trợ ứng dụng Anki'
+    },
+    { 
       title: 'Library', 
       path: '/library',
       icon: '📖',
@@ -31,6 +37,7 @@ const Menu: React.FC = () => {
       icon: '👨‍💻',
       description: 'Thông tin về ứng dụng và nhà phát triển'
     },
+    
   ];
 
   return (
