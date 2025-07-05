@@ -32,8 +32,9 @@ const AnkiWTC: React.FC = () => {
   React.useEffect(() => {
     const savedNote = localStorage.getItem('ankiwtc_note');
     const savedTable2 = localStorage.getItem('ankiwtc_table2');
+    console.log(`July debugging: ${savedTable2}`)
     if (savedNote) setNote(savedNote);
-    if (savedTable2) {
+    if (savedTable2 != `{"columns":["Column 1"],"rows":[[""]]}`) {
       try {
         const data = JSON.parse(savedTable2);
         if (data && data.columns && data.rows) setTable2Data(data);
@@ -48,7 +49,19 @@ const AnkiWTC: React.FC = () => {
 
   // Save table2 to localStorage
   React.useEffect(() => {
-    localStorage.setItem('ankiwtc_table2', JSON.stringify(table2Data));
+    // Only save if table2Data is not the default value
+    const isDefault =
+      table2Data.columns.length === DEFAULT_COLS.length &&
+      table2Data.columns.every((col, i) => col === DEFAULT_COLS[i]) &&
+      table2Data.rows.length === DEFAULT_ROWS.length &&
+      table2Data.rows.every(
+        (row, i) =>
+          row.length === DEFAULT_ROWS[i].length &&
+          row.every((cell, j) => cell === DEFAULT_ROWS[i][j])
+      );
+    if (!isDefault) {
+      localStorage.setItem('ankiwtc_table2', JSON.stringify(table2Data));
+    }
   }, [table2Data]);
 
   // Export JSON
