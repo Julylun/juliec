@@ -124,8 +124,15 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
           } else if (row < table.rows.length - 1) {
             setSelectedCell({ row: row + 1, col: 0, isHeader: false });
           } else {
-            // End of table, exit edit mode
-            setEditMode(false);
+            // End of table, add new row and move to first cell of new row
+            if (!table.disableAddRow && !table.singleRowOnly) {
+              table.addRow();
+              setTimeout(() => {
+                setSelectedCell({ row: table.rows.length, col: 0, isHeader: false });
+              }, 0);
+            } else {
+              setEditMode(false);
+            }
           }
         }
       } else if (e.key === 'Escape') {
