@@ -184,16 +184,23 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
   };
 
   // Initial select first cell if none
-  React.useEffect(() => {
-    if (!selectedCell && table.columns.length > 0 && table.rows.length > 0) {
-      setSelectedCell({ row: 0, col: 0, isHeader: false });
-    }
-  }, [selectedCell, table.columns.length, table.rows.length]);
+  // Không tự động chọn ô nào khi chưa click vào table
 
   React.useImperativeHandle(ref, () => ({ getData: table.getData }));
 
   return (
-    <div className="overflow-x-auto w-full max-w-3xl mb-8" tabIndex={0} onKeyDown={handleTableKeyDown}>
+    <div
+      className="overflow-x-auto w-full max-w-3xl mb-8"
+      tabIndex={0}
+      onKeyDown={handleTableKeyDown}
+      onBlur={e => {
+        // Nếu blur ra ngoài table, bỏ chọn ô (visual mode off)
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setSelectedCell(null);
+          setEditMode(false);
+        }
+      }}
+    >
       <table className="min-w-full border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-lg">
         <thead>
           <tr className="h-full flex justify-center items-center flex-row">
@@ -204,6 +211,10 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
                   onClick={() => {
                     setSelectedCell({ row: -1, col: idx, isHeader: true });
                     setEditMode(false);
+                  }}
+                  onDoubleClick={() => {
+                    setSelectedCell({ row: -1, col: idx, isHeader: true });
+                    setEditMode(true);
                   }}
                 >
                   <input
@@ -244,10 +255,16 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
               {row.map((cell, colIdx) => {
                 const isSelected = selectedCell && !selectedCell.isHeader && selectedCell.row === rowIdx && selectedCell.col === colIdx;
                 return (
-                  <td key={colIdx} className={`p-2 border-b border-[var(--border-color)] ${isSelected ? 'bg-yellow-100' : ''}`}
+                  <td
+                    key={colIdx}
+                    className={`p-2 border-b border-[var(--border-color)] ${isSelected ? 'bg-yellow-100' : ''}`}
                     onClick={() => {
                       setSelectedCell({ row: rowIdx, col: colIdx, isHeader: false });
                       setEditMode(false);
+                    }}
+                    onDoubleClick={() => {
+                      setSelectedCell({ row: rowIdx, col: colIdx, isHeader: false });
+                      setEditMode(true);
                     }}
                   >
                     <input
