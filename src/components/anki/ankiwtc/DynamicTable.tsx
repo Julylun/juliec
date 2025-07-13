@@ -186,6 +186,22 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
   // Initial select first cell if none
   // Không tự động chọn ô nào khi chưa click vào table
 
+  // Ref cho từng cell và header
+  const cellRefs = React.useRef<{ [key: string]: HTMLTableCellElement | null }>({});
+
+  // Auto scroll selected cell/header into view in visual mode
+  React.useEffect(() => {
+    if (selectedCell && !editMode) {
+      const key = selectedCell.isHeader
+        ? `header-${selectedCell.col}`
+        : `cell-${selectedCell.row}-${selectedCell.col}`;
+      const el = cellRefs.current[key];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      }
+    }
+  }, [selectedCell, editMode]);
+
   React.useImperativeHandle(ref, () => ({ getData: table.getData }));
 
   return (
@@ -207,7 +223,10 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
             {table.columns.map((col, idx) => {
               const isSelected = selectedCell && selectedCell.isHeader && selectedCell.col === idx;
               return (
-                <th key={idx} className={`p-2 border-b border-[var(--border-color)] relative group h-full flex justify-center items-center flex-row ${isSelected ? 'bg-yellow-200' : ''}`}
+                <th
+                  key={idx}
+                  ref={el => { cellRefs.current[`header-${idx}`] = el; }}
+                  className={`p-2 border-b border-[var(--border-color)] relative group h-full flex justify-center items-center flex-row ${isSelected ? 'bg-yellow-200' : ''}`}
                   onClick={() => {
                     setSelectedCell({ row: -1, col: idx, isHeader: true });
                     setEditMode(false);
@@ -257,6 +276,7 @@ const DynamicTable = React.forwardRef((props: any, ref) => {
                 return (
                   <td
                     key={colIdx}
+                    ref={el => { cellRefs.current[`cell-${rowIdx}-${colIdx}`] = el; }}
                     className={`p-2 border-b border-[var(--border-color)] ${isSelected ? 'bg-yellow-100' : ''}`}
                     onClick={() => {
                       setSelectedCell({ row: rowIdx, col: colIdx, isHeader: false });
