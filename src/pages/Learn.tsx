@@ -36,6 +36,12 @@ const Learn: React.FC = () => {
       icon: '🔠',
       description: 'Luyện tập dịch Anh-Việt với các chủ đề khác nhau'
     },
+    {
+      title: 'Tutor Agent',
+      path: '/learn/tutor-agent',
+      icon: '🤖',
+      description: 'Tạo agent lên lịch trình học tập cá nhân hóa cho bạn'
+    },
   ];
 
   return (
