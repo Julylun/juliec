@@ -20,6 +20,7 @@ import PageTransition from "../components/PageTransition";
 import Anki from '../pages/Anki';
 import AnkiWTC from '../pages/AnkiWTC';
 import TutorAgent from '../pages/TutorAgent';
+import TutorAgentTeach from '../pages/TutorAgentTeach';
 
 const AppRoutes: React.FC = () => {
   const location = useLocation();
@@ -39,6 +40,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/learn/translate" element={<PageTransition><Translate /></PageTransition>} />
         <Route path="/learn/translate/:topicId" element={<PageTransition><TranslateLearn /></PageTransition>} />
         <Route path="/learn/tutor-agent" element={<PageTransition><TutorAgent /></PageTransition>} />
+        <Route path="/learn/tutor-agent/teach" element={<PageTransition><TutorAgentTeach /></PageTransition>} />
         <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
         <Route path="/setting" element={<PageTransition><Setting /></PageTransition>} />
         <Route path="/about" element={<PageTransition><About /></PageTransition>} />

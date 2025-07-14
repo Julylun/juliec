@@ -26,16 +26,33 @@ const GEMINI_MODELS: { id: GeminiModelVersion; name: string; description: string
     id: 'gemini-2.0-pro-exp-02-05',
     name: 'Gemini Pro',
     description: 'Phiên bản cao cấp với độ chính xác cao nhất (có thể bị giới hạn quota)'
+  },
+  {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    description: 'Model mới nhất, chất lượng cao, có thể cần quota đặc biệt.'
+  },
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    description: 'Model 2.5 tốc độ cao, tối ưu cho phản hồi nhanh.'
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Nhập model tuỳ chọn (advanced user)'
   }
 ];
 
-const ApiSettings: React.FC<ApiSettingsProps> = ({
+const ApiSettings: React.FC<ApiSettingsProps & { customGeminiModel?: string; onCustomModelChange?: (model: string) => void }> = ({
   geminiKey,
   showApiKey,
   setShowApiKey,
   onApiKeyChange,
   geminiModel,
-  onModelChange
+  onModelChange,
+  customGeminiModel,
+  onCustomModelChange
 }) => {
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
@@ -105,14 +122,26 @@ const ApiSettings: React.FC<ApiSettingsProps> = ({
                 <div className="text-sm text-[var(--text-secondary)]">{model.description}</div>
               </button>
             ))}
-            <button
-              onClick={handleTestApiKey}
-              disabled={testing || !geminiKey}
-              className={`p-2 bg-[var(--border-color)] rounded-lg border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-primary)] ${testing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {testing ? 'Đang kiểm tra...' : 'Test API Key'}
-            </button>
           </div>
+          {geminiModel === 'custom' && (
+            <div className="mt-4">
+              <label className="block text-[var(--text-secondary)] mb-2">Nhập model tuỳ chọn:</label>
+              <input
+                className="w-full p-2 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)]"
+                value={customGeminiModel || ''}
+                onChange={e => onCustomModelChange && onCustomModelChange(e.target.value)}
+                placeholder="Ví dụ: gemini-2.5-pro, gemini-2.0-pro, ..."
+              />
+              <p className="text-xs text-[var(--text-secondary)] mt-1">Chỉ dành cho người dùng nâng cao, nhập đúng tên model Gemini hỗ trợ.</p>
+            </div>
+          )}
+          <button
+            onClick={handleTestApiKey}
+            disabled={testing || !geminiKey}
+            className={`p-2 bg-[var(--border-color)] rounded-lg border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-primary)] ${testing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {testing ? 'Đang kiểm tra...' : 'Test API Key'}
+          </button>
           {testResult && (
             <div className="mt-2 text-sm" style={{ color: testResult.includes('hợp lệ') ? 'green' : 'red' }}>
               {testResult}

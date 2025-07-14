@@ -7,7 +7,13 @@ export type ThemeType =
   | 'sky'
   | 'custom';
 
-export type GeminiModelVersion = 'gemini-2.0-flash' | 'gemini-2.0-flash-lite' | 'gemini-2.0-pro-exp-02-05';
+export type GeminiModelVersion =
+  | 'gemini-2.0-flash'
+  | 'gemini-2.0-flash-lite'
+  | 'gemini-2.0-pro-exp-02-05'
+  | 'gemini-2.5-pro'
+  | 'gemini-2.5-flash'
+  | 'custom';
 
 export type EnglishStandardType = 'toeic' | 'ielts' | 'cefr';
 
@@ -24,6 +30,7 @@ export interface Settings {
   customColors?: CustomColors;
   geminiKey: string;
   geminiModel: GeminiModelVersion;
+  customGeminiModel?: string; // Model tuỳ chọn do user nhập
   englishStandard: EnglishStandardType;
   profile?: {
     name: string;

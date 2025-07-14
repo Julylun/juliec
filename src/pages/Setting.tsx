@@ -39,7 +39,15 @@ const Setting: React.FC = () => {
   };
 
   const handleModelChange = (model: GeminiModelVersion) => {
-    updateSettings({ geminiModel: model });
+    if (model === 'custom') {
+      updateSettings({ geminiModel: model });
+    } else {
+      updateSettings({ geminiModel: model, customGeminiModel: undefined });
+    }
+  };
+
+  const handleCustomModelChange = (model: string) => {
+    updateSettings({ customGeminiModel: model });
   };
 
   const handleEnglishStandardChange = (standard: EnglishStandardType) => {
@@ -186,6 +194,8 @@ const Setting: React.FC = () => {
           onApiKeyChange={handleApiKeyChange}
           geminiModel={settings.geminiModel}
           onModelChange={handleModelChange}
+          customGeminiModel={settings.customGeminiModel}
+          onCustomModelChange={handleCustomModelChange}
         />
         <EnglishStandardSettings
           englishStandard={settings.englishStandard}

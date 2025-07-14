@@ -447,14 +447,38 @@ export class GeminiService {
     return errors.join(", ");
   }
 
-  public async generateContent(prompt: string): Promise<string | null> {
+  public async generateContent(prompt: string): Promise<string> {
     try {
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
-      return response.text();
-    } catch (error) {
-      console.error('Error generating content:', error);
-      return null;
+      const text = await response.text();
+      if (!text) {
+        throw new Error('Gemini API trả về kết quả rỗng.');
+      }
+      return text;
+    } catch (error: any) {
+      // Lấy message chi tiết nhất có thể
+      let errMsg = 'Error generating content';
+      if (error?.message) {
+        errMsg = error.message;
+      } else if (typeof error === 'string') {
+        errMsg = error;
+      }
+      // Nếu có response từ GoogleGenerativeAI, lấy message chi tiết
+      if (error?.response?.status) {
+        errMsg += ` (HTTP ${error.response.status})`;
+      }
+      // Nếu có lỗi overload hoặc quota, thêm hướng dẫn
+      if (errMsg.toLowerCase().includes('overloaded')) {
+        errMsg += ' (Model đang quá tải, hãy thử lại sau vài phút.)';
+      }
+      if (errMsg.toLowerCase().includes('quota')) {
+        errMsg += ' (API key của bạn đã hết quota hoặc bị giới hạn.)';
+      }
+      if (errMsg.toLowerCase().includes('network')) {
+        errMsg += ' (Lỗi mạng, vui lòng kiểm tra kết nối Internet.)';
+      }
+      throw new Error(errMsg);
     }
   }
 

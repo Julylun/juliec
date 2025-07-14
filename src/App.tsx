@@ -5,6 +5,7 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { LearningProvider } from './contexts/LearningContext';
 import { VocabularyProvider } from './contexts/VocabularyContext';
 import ThemeToggle from './components/ui/ThemeToggle';
+import { Toaster } from 'react-hot-toast';
 import './styles/global.css';
 
 const App: React.FC = () => {
@@ -17,6 +18,7 @@ const App: React.FC = () => {
             <div className="app">
               <AppRoutes />
             </div>
+            <Toaster position="top-right" />
           </VocabularyProvider>
         </LearningProvider>
       </SettingsProvider>
