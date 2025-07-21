@@ -42,6 +42,12 @@ const Learn: React.FC = () => {
       icon: '🤖',
       description: 'Tạo agent lên lịch trình học tập cá nhân hóa cho bạn'
     },
+    {
+      title: 'PDF',
+      path: '/learn/pdf',
+      icon: '📄',
+      description: 'Học từ vựng với tài liệu PDF'
+    },
   ];
 
   return (

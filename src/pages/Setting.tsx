@@ -40,7 +40,7 @@ const Setting: React.FC = () => {
 
   const handleModelChange = (model: GeminiModelVersion) => {
     if (model === 'custom') {
-      updateSettings({ geminiModel: model });
+    updateSettings({ geminiModel: model });
     } else {
       updateSettings({ geminiModel: model, customGeminiModel: undefined });
     }
